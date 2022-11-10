@@ -4,7 +4,7 @@ from . import utils as ut
 from datetime import date, timedelta
 
 
-def liquid_folder_path(folder_date: date, create_path: bool) -> str:
+def liquid_folder_path(folder_date: date, create_path: bool) -> Path:
     basePath = Path(
         r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
     yearStr = str(folder_date.year)
@@ -45,13 +45,13 @@ def update_env_file(from_date, to_date):
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
     ut.replace_text_in_file(
-        file_path, from_path.as_posix(), to_path.as_posix())
+        file_path, str(from_path), str(to_path))
     ut.replace_text_in_file(file_path, from_date_str, to_date_str)
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
     from_path = liquid_folder_path(from_date, False)
     to_path = liquid_folder_path(to_date, False)
-    copy_folder(from_path, to_path)
+    ut.copy_folder_with_check(from_path, to_path)
     delete_files(from_date, to_date)
     update_env_file(from_date, to_date)

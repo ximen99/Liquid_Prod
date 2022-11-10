@@ -1,6 +1,7 @@
 import os
 import shutil
 from datetime import date
+from pathlib import Path
 
 
 def delete_files_with_extension(path, extension):
@@ -51,3 +52,13 @@ def replace_text_in_file(file_path, old_text, new_text):
     filedata = filedata.replace(old_text, new_text)
     with open(file_path, 'w') as file:
         file.write(filedata)
+
+
+def copy_folder_with_check(from_path: date, to_path: date) -> None:
+    overwrite = "Y"
+    if Path(to_path).exists():
+        overwrite = input(
+            "Folder already exists, do you want to overwrite? (Y/N): ")
+
+    if overwrite in ["Y", "y"]:
+        copy_and_overwrite(from_path, to_path)
