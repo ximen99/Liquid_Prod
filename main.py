@@ -1,8 +1,7 @@
-import lib.liquid as li
-import lib.collateral as co
+import lib
 from datetime import date, timedelta
 
-from_date = date(2022, 10, 21)
+from_date = date(2022, 11, 4)
 new_date = from_date + timedelta(days=7)
 
-co.create_template_folder(from_date, new_date)
+lib.total_fund_bmk_tree.create_template_folder(from_date, new_date)

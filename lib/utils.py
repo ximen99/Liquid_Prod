@@ -62,3 +62,5 @@ def copy_folder_with_check(from_path: date, to_path: date) -> None:
 
     if overwrite in ["Y", "y"]:
         copy_and_overwrite(from_path, to_path)
+
+    print("Copied to folder at" + str(to_path))
