@@ -61,6 +61,15 @@ def replace_text_in_file(file_path, old_text, new_text):
         file.write(filedata)
 
 
+def replace_text_in_file_with_regex(file_path, old_text, new_text) -> None:
+    import re
+    with open(file_path, 'r') as file:
+        filedata = file.read()
+    filedata = re.sub(old_text, new_text, filedata)
+    with open(file_path, 'w') as file:
+        file.write(filedata)
+
+
 def copy_folder_with_check(from_path: date, to_path: date) -> None:
     overwrite = "Y"
     if Path(to_path).exists():

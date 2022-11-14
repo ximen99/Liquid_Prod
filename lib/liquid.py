@@ -38,7 +38,7 @@ def delete_files(from_date: date, to_date: date) -> None:
           ("PV Report Liquids "+old_wk_date_str+".xlsx")))
 
 
-def update_env_file(from_date, to_date):
+def update_env_file_date(from_date, to_date):
     from_path = create_folder_path(prod_path, from_date, False)
     to_path = create_folder_path(prod_path, to_date, False)
     file_path = create_folder_path(
@@ -48,7 +48,20 @@ def update_env_file(from_date, to_date):
     ut.replace_text_in_file(
         file_path, str(from_path), str(to_path))
     ut.replace_text_in_file(file_path, from_date_str, to_date_str)
-    print("updated environment file at "+str(file_path))
+    print("updated date from " + from_date_str + " to " + to_date_str +
+          " in environment file at "+str(file_path))
+
+
+def update_env_file_position(date: date, position: str) -> None:
+    if position not in ["Basket_Hedge", "Fix", "IFT", "Illiquids", "Main"]:
+        raise Exception(
+            "position not valid, please choose in Basket_Hedge, Fix, IFT, Illiquids, Main")
+    path = create_folder_path(base_path, date)
+    file_path = path / "NewArch_LiquidsDerivatives V1 CSV.environment"
+    position_regex = r"Basket_Hedge|Fix|IFT|Illiquids|Main"
+    ut.replace_text_in_file_with_regex(file_path, position_regex, position)
+    print("updated positition to " + position +
+          " in environment file at "+str(file_path))
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
@@ -56,7 +69,8 @@ def create_template_folder(from_date: date, to_date: date) -> None:
     to_path = create_folder_path(base_path, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(from_date, to_date)
-    update_env_file(from_date, to_date)
+    update_env_file_date(from_date, to_date)
+    update_env_file_position(to_date, "Basket_Hedge")
 
 
 def get_all_liquid_except_CIBC() -> pd.DataFrame:
@@ -137,3 +151,11 @@ def create_fix_file(date) -> None:
     )
     print("Saved Positions_"+ut.date_to_str(date) +
           "_Fix.csv at "+str(save_folder_path))
+
+
+# def create_portfolio_filter_group(date: date) -> None:
+#     path = create_folder_path(base_path, date)
+#     new_week_portfolios = (
+#         get_all_liquid_except_CIBC()
+
+#     )
