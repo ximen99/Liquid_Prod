@@ -11,14 +11,15 @@ def delete_files_with_extension(path, extension):
     for file in os.listdir(path):
         if file.endswith(extension):
             os.remove(os.path.join(path, file))
+            print("Deleted file: " + file)
 
 
-def date_to_str(date: date) -> str:
-    return str(date.year) + int_to_two_digit_str(date.month) + int_to_two_digit_str(date.day)
+def date_to_str(dt: date) -> str:
+    return str(dt.year) + int_to_two_digit_str(dt.month) + int_to_two_digit_str(dt.day)
 
 
-def date_to_str_with_dash(date: date) -> str:
-    return str(date.year) + "-" + int_to_two_digit_str(date.month) + "-" + int_to_two_digit_str(date.day)
+def date_to_str_with_dash(dt: date) -> str:
+    return str(dt.year) + "-" + int_to_two_digit_str(dt.month) + "-" + int_to_two_digit_str(dt.day)
 
 
 def get_file_extension(path) -> str:
@@ -29,6 +30,7 @@ def delete_files_name_contains(path, text):
     for file in os.listdir(path):
         if text in file:
             os.remove(os.path.join(path, file))
+            print("Deleted file: " + file)
 
 
 def delete_files_except_extensions(path, extensions):
@@ -36,17 +38,21 @@ def delete_files_except_extensions(path, extensions):
         file_extension = get_file_extension(file)
         if file_extension not in extensions:
             os.remove(os.path.join(path, file))
+            print("Deleted file: " + file)
 
 
 def delete_files_in_folder(path):
     for file in os.listdir(path):
         os.remove(os.path.join(path, file))
+        print("Deleted file: " + file)
 
 
 def copy_and_overwrite(from_path: str, to_path: str):
     if os.path.exists(to_path):
         shutil.rmtree(to_path)
+        print("Deleted folder: " + str(to_path))
     shutil.copytree(from_path, to_path)
+    print("Copied folder from " + str(from_path) + " to " + str(to_path))
 
 
 def int_to_two_digit_str(number: int) -> str:
@@ -59,6 +65,8 @@ def replace_text_in_file(file_path, old_text, new_text):
     filedata = filedata.replace(old_text, new_text)
     with open(file_path, 'w') as file:
         file.write(filedata)
+    print("replaced " + old_text + " with " +
+          new_text + " in " + str(file_path))
 
 
 def replace_text_in_file_with_regex(file_path, old_text, new_text) -> None:
@@ -68,6 +76,8 @@ def replace_text_in_file_with_regex(file_path, old_text, new_text) -> None:
     filedata = re.sub(old_text, new_text, filedata)
     with open(file_path, 'w') as file:
         file.write(filedata)
+    print("replaced " + old_text + " with " +
+          new_text + " in " + str(file_path))
 
 
 def copy_folder_with_check(from_path: date, to_path: date) -> None:
@@ -111,3 +121,24 @@ def read_sql_file(path: str) -> str:
 def read_data_from_preston_with_sql_file(path: Path, params: list = None) -> pd.DataFrame:
     sql = read_sql_file(path)
     return read_data_from_preston_with_string(sql, params)
+
+
+def sort_lists_move_unmatch_to_last(list1, list2):
+    list1.sort()
+    list2.sort()
+    list1_copy = list1.copy()
+    list2_copy = list2.copy()
+    for item in list1_copy:
+        if item not in list2_copy:
+            list1.remove(item)
+            list1.append(item)
+    for item in list2_copy:
+        if item not in list1_copy:
+            list2.remove(item)
+            list2.append(item)
+    return list1, list2
+
+
+def excel_to_csv(path: Path) -> None:
+    pd.read_excel(path).to_csv(str(path).replace(".xlsx", ".csv"), index=False)
+    print("Converted " + str(path) + " to csv")

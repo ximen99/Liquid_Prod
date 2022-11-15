@@ -1,8 +1,9 @@
 from pathlib import Path
 from . import utils as ut
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from . import config
 import pandas as pd
+import xlwings as xw
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
@@ -108,6 +109,11 @@ def get_main_data() -> pd.DataFrame:
     return ut.read_data_from_preston_with_sql_file(path)
 
 
+def get_filter_group_data() -> pd.DataFrame:
+    path = sql_path / "portfolio_filter_group.sql"
+    return ut.read_data_from_preston_with_sql_file(path)
+
+
 def save_weekly_liquid_data(date) -> None:
     path = create_folder_path(base_path, date, True)
     to_download = {}
@@ -153,9 +159,40 @@ def create_fix_file(date) -> None:
           "_Fix.csv at "+str(save_folder_path))
 
 
-# def create_portfolio_filter_group(date: date) -> None:
-#     path = create_folder_path(base_path, date)
-#     new_week_portfolios = (
-#         get_all_liquid_except_CIBC()
-
-#     )
+def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
+    path = create_folder_path(base_path, to_date)
+    new_week_portfolios = (
+        get_filter_group_data()
+        ['ParentPortfolioCode']
+        .unique()
+        .reshape(-1, 1)
+        .tolist()
+    )
+    with xw.App() as app:
+        wb = app.books.open(
+            path / ("Portfolio Filter Group " + ut.date_to_str(from_date)+".xlsx"))
+        sheet = wb.sheets[0]
+        old_week_portfolios = sheet.range(
+            "F2").options(expand="down", ndim=1).value
+        sheet.range("B1").value = sheet.range("F1").value
+        old_week_portfolios, new_week_portfolios = ut.sort_lists_move_unmatch_to_last(
+            sheet.range("F2").options(expand="down", ndim=2).value, new_week_portfolios)
+        sheet.range("F2").expand("down").clear_contents()
+        sheet.range("B2").expand("down").clear_contents()
+        sheet.range("A3").expand('down').clear_contents()
+        sheet.range("B2").value = old_week_portfolios
+        last_r = sheet.range("B1").end("down").row
+        sheet.range("A2:A"+str(last_r)).formula = sheet.range("A2").formula
+        sheet.range("F1").value = datetime(
+            to_date.year, to_date.month, to_date.day)
+        sheet.range("F2").value = new_week_portfolios
+        sheet.range("E3").expand("down").clear_contents()
+        last_r = sheet.range("F1").end("down").row
+        sheet.range("E2:E"+str(last_r)).formula = sheet.range("E2").formula
+        wb.save(path / ("Portfolio Filter Group " +
+                        ut.date_to_str(to_date)+".xlsx"))
+        wb.close()
+    print("Created Portfolio Filter Group file at " + (path /
+          ("Portfolio Filter Group " + ut.date_to_str(to_date)+".xlsx")))
+    ut.delete_files_with_extension(
+        path, " Group " + ut.date_to_str(from_date)+".xlsx")
