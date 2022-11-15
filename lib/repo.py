@@ -22,9 +22,7 @@ def delete_files(to_date: date) -> None:
     to_path = create_folder_path(base_path, to_date, False)
     ut.delete_files_except_extensions(
         to_path / "Loading", [".environment", ".rst4"])
-    print("Deleted files under " + str(to_path / "Loading"))
     ut.delete_files_with_extension(to_path, ".csv")
-    print("Deleted csv files under " + str(to_path))
 
 
 def update_env_file(from_date, to_date):
@@ -34,7 +32,6 @@ def update_env_file(from_date, to_date):
         "Loading" / "Repo_Col_V2.environment"
     ut.replace_text_in_file(
         file_path, str(from_path), str(to_path))
-    print("updated environment file at "+str(file_path))
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:

@@ -7,13 +7,6 @@ import pandas as pd
 from typing import List
 
 
-def delete_files_with_extension(path, extension):
-    for file in os.listdir(path):
-        if file.endswith(extension):
-            os.remove(os.path.join(path, file))
-            print("Deleted file: " + file)
-
-
 def date_to_str(dt: date) -> str:
     return str(dt.year) + int_to_two_digit_str(dt.month) + int_to_two_digit_str(dt.day)
 
@@ -24,6 +17,13 @@ def date_to_str_with_dash(dt: date) -> str:
 
 def get_file_extension(path) -> str:
     return os.path.splitext(path)[1]
+
+
+def delete_files_with_extension(path, extension):
+    for file in os.listdir(path):
+        if file.endswith(extension):
+            os.remove(os.path.join(path, file))
+            print("Deleted file: " + file)
 
 
 def delete_files_name_contains(path, text):

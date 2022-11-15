@@ -24,19 +24,13 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool = Fa
 def delete_files(from_date: date, to_date: date) -> None:
     to_path = create_folder_path(base_path, to_date, False)
     ut.delete_files_in_folder(to_path / "Mapping")
-    print("Deleted files under " + str(to_path / "Mapping"))
     ut.delete_files_in_folder(to_path / "Results")
-    print("Deleted files under " + str(to_path / "Results"))
     ut.delete_files_with_extension(to_path / "Files", ".csv")
-    print("Deleted csv files under " + str(to_path))
     old_wk_date_str = ut.date_to_str(from_date - timedelta(days=7))
     ut.delete_files_name_contains(
         to_path, "PV Report Liquids "+old_wk_date_str+".xlsx")
-    print("Deleted " + str(to_path / ("PV Report Liquids "+old_wk_date_str+".xlsx")))
     ut.delete_files_name_contains(
         to_path / "Illiquid RMLs", "PV Report Illiquids "+old_wk_date_str+".xlsx")
-    print("Deleted " + str(to_path / "Illiquid RMLs" /
-          ("PV Report Liquids "+old_wk_date_str+".xlsx")))
 
 
 def update_env_file_date(from_date, to_date):
@@ -49,8 +43,6 @@ def update_env_file_date(from_date, to_date):
     ut.replace_text_in_file(
         file_path, str(from_path), str(to_path))
     ut.replace_text_in_file(file_path, from_date_str, to_date_str)
-    print("updated date from " + from_date_str + " to " + to_date_str +
-          " in environment file at "+str(file_path))
 
 
 def update_env_file_position(date: date, position: str) -> None:
@@ -61,8 +53,6 @@ def update_env_file_position(date: date, position: str) -> None:
     file_path = path / "NewArch_LiquidsDerivatives V1 CSV.environment"
     position_regex = r"Basket_Hedge|Fix|IFT|Illiquids|Main"
     ut.replace_text_in_file_with_regex(file_path, position_regex, position)
-    print("updated positition to " + position +
-          " in environment file at "+str(file_path))
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
