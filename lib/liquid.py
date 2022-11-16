@@ -182,7 +182,7 @@ def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
         wb.save(path / ("Portfolio Filter Group " +
                         ut.date_to_str(to_date)+".xlsx"))
         wb.close()
-    print("Created Portfolio Filter Group file at " + (path /
+    print("Created Portfolio Filter Group file at " + str(path /
           ("Portfolio Filter Group " + ut.date_to_str(to_date)+".xlsx")))
     ut.delete_files_with_extension(
         path, " Group " + ut.date_to_str(from_date)+".xlsx")
