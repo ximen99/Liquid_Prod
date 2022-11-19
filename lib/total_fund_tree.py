@@ -1,12 +1,14 @@
 from pathlib import Path
 from . import utils as ut
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from . import config
-
+import xlwings as xw
+import pandas as pd
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\TREE\Total Fund Tree")
 base_path = config.DEV_PATH if config.IS_DEV else prod_path
+sql_path = Path(__file__).parent / "sql" / "total_fund_tree"
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
@@ -47,3 +49,174 @@ def create_template_folder(from_date: date, to_date: date) -> None:
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(from_date, to_date)
     update_env_file(from_date, to_date)
+
+
+def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
+    def get_save_to_file_name(clientPorfolioID: str) -> str:
+        if "GPF" in clientPorfolioID:
+            return "PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx"
+        else:
+            return "PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx"
+
+    with xw.App(visible=False) as app:
+        wb = app.books.open(
+            path / file_name)
+        sheet = wb.sheets[0]
+        save_to_name = get_save_to_file_name(sheet.range("I21").value)
+        sheet.range("20:20").api.AutoFilter(Field := 1, Criteria1 := "=0")
+        wb.save(path / save_to_name)
+        wb.close()
+    ut.delete_files_name_contains(path, file_name)
+    print("Updated " + save_to_name + " in " + str(path))
+
+
+def create_extMan_PV_reports(to_date: date) -> None:
+    path = create_folder_path(base_path, to_date, False) / "Scale Calculation"
+    ut.loop_through_files_contains(
+        path, "PV Report Liquids External Manager", update_extMan_PV_report, to_date)
+
+
+def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
+    file_prefix = "Scale calculation E0043 "
+    folder_path = create_folder_path(
+        base_path, to_date, False) / "Scale Calculation"
+    file_path = folder_path / \
+        (file_prefix + ut.date_to_str(from_date) + ".xlsx")
+    save_to_path = folder_path / \
+        (file_prefix + ut.date_to_str(to_date) + ".xlsx")
+    pv_path = folder_path / \
+        ("PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx")
+    pv_data = (
+        pd.read_excel(pv_path, skiprows=19,
+                      usecols=lambda x: 'Unnamed' not in x)
+        .query("Level == 0")
+        .filter(["Name", "PV"])
+        .set_index("Name")
+    )
+    fx = (
+        ut.read_data_from_preston_with_sql_file(
+            sql_path/"fx.sql", [ut.date_to_str_with_dash(to_date)])
+        .loc[0, "IPS_CAD_QUOTE_MID"])
+
+    with xw.App(visible=False) as app:
+        wb = app.books.open(file_path)
+        sheet = wb.sheets[0]
+        sheet.range("A21:A25").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*5
+        sheet.range("F21:F25").value = [[fx]]*5
+        for r in range(21, 26):
+            sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
+                f"D{r}").value, "PV"]
+        app.calculate()
+        wb.save(save_to_path)
+        wb.close()
+    ut.delete_files_name_contains(
+        folder_path, file_prefix + ut.date_to_str(from_date))
+    print("Updated " + str(save_to_path))
+
+
+def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
+    file_prefix = "Scale calculation GPF "
+    folder_path = create_folder_path(
+        base_path, to_date, False) / "Scale Calculation"
+    file_path = folder_path / \
+        (file_prefix + ut.date_to_str(from_date) + ".xlsx")
+    save_to_path = folder_path / \
+        (file_prefix + ut.date_to_str(to_date) + ".xlsx")
+    pv_path = folder_path / \
+        ("PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx")
+    pv_data = (
+        pd.read_excel(pv_path, skiprows=19,
+                      usecols=lambda x: 'Unnamed' not in x)
+        .query("Level == 0")
+        .filter(["Name", "PV"])
+        .set_index("Name")
+    )
+    gpf_mv = (
+        ut.read_data_from_preston_with_sql_file(
+            sql_path/"gpf.sql", [ut.date_to_str_with_dash(to_date)])
+        .set_index("SCD_SEC_ID")
+    )
+
+    with xw.App(visible=False) as app:
+        wb = app.books.open(file_path)
+        sheet = wb.sheets[0]
+        sheet.range("A3:A10").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*8
+        sheet.range("A16:A23").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*8
+        for r in range(3, 11):
+            sheet.range(f"H{r}").value = gpf_mv.loc[sheet.range(
+                f"E{r}").value, "BASE_Total_Market_Value"]
+            sheet.range(f"I{r}").value = gpf_mv.loc[sheet.range(
+                f"E{r}").value, "FX_RATE"]
+        for r in range(16, 24):
+            sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
+                f"D{r}").value, "PV"]
+        app.calculate()
+        wb.save(save_to_path)
+        wb.close()
+    ut.delete_files_name_contains(
+        folder_path, file_prefix + ut.date_to_str(from_date))
+    print("Updated " + str(save_to_path))
+
+
+def get_scale_df(folder_path: Path, folder_date: date) -> pd.DataFrame:
+    def read_scale(file_path, skiprows):
+        return (
+            pd.read_excel(file_path, skiprows=skiprows,
+                          usecols="D:E", header=None)
+            .rename(columns={3: "port_code", 4: "scale"})
+            .assign(port_code=lambda _df: _df["port_code"].str.replace(" Scale", ""))
+            .set_index("port_code")
+        )
+    mtg_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation E0043 " +
+                                                            ut.date_to_str(folder_date) + ".xlsx"), 27)
+    gpf_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation GPF " +
+                                                            ut.date_to_str(folder_date) + ".xlsx"), 25)
+    return pd.concat([mtg_scale, gpf_scale], axis=0)
+
+
+def update_total_fund_tree(to_date: date) -> None:
+    file_name = "Total_Fund_Tree _" + ut.date_to_str(to_date) + ".xlsx"
+    path = create_folder_path(base_path, to_date, False)
+    scale = get_scale_df(path, to_date)
+    with xw.App(visible=False) as app:
+        wb = app.books.open(path / file_name)
+        sheet = wb.sheets[0]
+        last_row = sheet.range("A1").end("down").row
+        for r in range(2, last_row+1):
+            if sheet.range(f"F{r}").value in scale.index:
+                sheet.range(f"J{r}").value = scale.loc[sheet.range(
+                    f"F{r}").value, "scale"]
+        (sheet.range("A1:J"+str(last_row))
+         .options(pd.DataFrame)
+         .value
+         .to_csv(path / ("Total_Fund_Tree _" + ut.date_to_str(to_date) + ".csv"), index=False)
+         )
+        app.calculate()
+        wb.save()
+        wb.close()
+    print("Updated " + str(path / file_name))
+
+
+def update_total_fund_pv_report(to_date: date) -> None:
+    file_name = "Total Fund PV Report.xlsx"
+    path = create_folder_path(base_path, to_date, False)
+
+    with xw.App(visible=False) as app:
+        wb = app.books.open(path / file_name)
+        sheet = wb.sheets[0]
+        sheet.copy(
+            before=wb.sheets['Statistic Definitions'], name="View 1 assetClass (2)")
+        sheet.api.Outline.ShowLevels(RowLevels=2)
+        sheet_copy = wb.sheets["View 1 assetClass (2)"]
+        sheet_copy.api.Outline.ShowLevels(RowLevels=4)
+        sheet_copy.range("A1:A10").api.EntireRow.Hidden = True
+        sheet_copy.range("A12:A19").api.EntireRow.Hidden = True
+        wb.save(path/("Total Fund PV Report " +
+                ut.date_to_str(to_date) + ".xlsx"))
+        wb.close()
+    print("Updated " + str(path/("Total Fund PV Report " +
+          ut.date_to_str(to_date) + ".xlsx")))
+    ut.delete_files_name_contains(path, "Total Fund PV Report.xlsx")

@@ -142,3 +142,9 @@ def sort_lists_move_unmatch_to_last(list1, list2):
 def excel_to_csv(path: Path) -> None:
     pd.read_excel(path).to_csv(str(path).replace(".xlsx", ".csv"), index=False)
     print("Converted " + str(path) + " to csv")
+
+
+def loop_through_files_contains(path: Path, text: str, func, *args, **kwargs):
+    for file in os.listdir(path):
+        if text in file:
+            func(path, file, *args, **kwargs)

@@ -158,7 +158,7 @@ def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
         .reshape(-1, 1)
         .tolist()
     )
-    with xw.App() as app:
+    with xw.App(visible=False) as app:
         wb = app.books.open(
             path / ("Portfolio Filter Group " + ut.date_to_str(from_date)+".xlsx"))
         sheet = wb.sheets[0]
@@ -179,6 +179,7 @@ def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
         sheet.range("E3").expand("down").clear_contents()
         last_r = sheet.range("F1").end("down").row
         sheet.range("E2:E"+str(last_r)).formula = sheet.range("E2").formula
+        app.calculate()
         wb.save(path / ("Portfolio Filter Group " +
                         ut.date_to_str(to_date)+".xlsx"))
         wb.close()

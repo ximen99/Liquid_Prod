@@ -27,7 +27,7 @@ def delete_files(to_date: date) -> None:
     ut.delete_files_with_extension(to_path, ".csv")
 
 
-def update_env_file(from_date, to_date):
+def update_env_file(from_date: date, to_date: date):
     from_path = create_folder_path(prod_path, from_date, False)
     to_path = create_folder_path(prod_path, to_date, False)
     file_path = create_folder_path(base_path, to_date, False) / \
@@ -57,7 +57,7 @@ def get_indexCSV_data() -> pd.DataFrame:
     return ut.read_data_from_preston_with_sql_file(path)
 
 
-def create_lookthru_cube(from_date, to_date) -> None:
+def create_lookthru_cube(from_date: date, to_date: date) -> None:
     new_week_df_to_append = get_indexCSV_data()
     path = create_folder_path(base_path, to_date, False)
     file_prefix = "Lookthrough - Cube -  "
@@ -76,27 +76,28 @@ def create_lookthru_cube(from_date, to_date) -> None:
     new_week_df = pd.concat(
         [ecompass_df, new_week_df_to_append], ignore_index=True)
 
-    with xw.App() as app:
+    with xw.App(visible=False) as app:
         wb = app.books.open(
-            path / (file_prefix + old_week_str + ".xlsx"))
+            path / f"{file_prefix}{old_week_str}.xlsx")
         sheet = wb.sheets[0]
         sheet.clear_contents()
         sheet.range("A1").value = new_week_df.set_index("MSCI_RM_INDEX_ID")
-        wb.save(path / (file_prefix + new_week_str + ".xlsx"))
+        app.calculate()
+        wb.save(path / f"{file_prefix}{new_week_str}.xlsx")
         wb.close()
     print("Lookthrough Cube created at " +
-          str(path / (file_prefix + new_week_str + ".xlsx")))
+          str(path / f"{file_prefix}{new_week_str}.xlsx"))
     ut.delete_files_name_contains(
-        path, file_prefix + old_week_str + ".xlsx")
+        path, f"{file_prefix}{old_week_str}.xlsx")
 
 
-def turn_lookthru_cube_to_csv(date) -> None:
-    path = create_folder_path(base_path, date, False)
-    file_name = "Lookthrough - Cube -  " + ut.date_to_str(date) + ".xlsx"
+def turn_lookthru_cube_to_csv(to_date: date) -> None:
+    path = create_folder_path(base_path, to_date, False)
+    file_name = f"Lookthrough - Cube -  {ut.date_to_str(to_date)}.xlsx"
     ut.excel_to_csv(path / file_name)
 
 
-def create_LookthroughMapping(from_date, to_date) -> None:
+def create_LookthroughMapping(from_date: date, to_date: date) -> None:
     path = create_folder_path(base_path, to_date, False)
     file_prefix = "LookthroughMapping_"
     old_week_str = ut.date_to_str(from_date)
@@ -115,21 +116,22 @@ def create_LookthroughMapping(from_date, to_date) -> None:
     new_week_df = pd.concat(
         [ecompass_df, new_week_df_to_append])
 
-    with xw.App() as app:
+    with xw.App(visible=False) as app:
         wb = app.books.open(
             path / (file_prefix + old_week_str + ".xlsx"))
         sheet = wb.sheets[0]
         sheet.clear_contents()
         sheet.range("A1").value = new_week_df
-        wb.save(path / (file_prefix + new_week_str + ".xlsx"))
+        app.calculate()
+        wb.save(path / f"{file_prefix}{new_week_str}.xlsx")
         wb.close()
     print("LookthroughMapping created at " +
-          str(path / (file_prefix + new_week_str + ".xlsx")))
+          str(path / f"{file_prefix}{new_week_str}.xlsx"))
     ut.delete_files_name_contains(
-        path, file_prefix + old_week_str + ".xlsx")
+        path, f"{file_prefix}{old_week_str}.xlsx")
 
 
-def turn_LookthruMapping_to_csv(date) -> None:
-    path = create_folder_path(base_path, date, False)
-    file_name = "LookthroughMapping_" + ut.date_to_str(date) + ".xlsx"
+def turn_LookthruMapping_to_csv(to_date: date) -> None:
+    path = create_folder_path(base_path, to_date, False)
+    file_name = f"LookthroughMapping_{ut.date_to_str(to_date)}.xlsx"
     ut.excel_to_csv(path / file_name)
