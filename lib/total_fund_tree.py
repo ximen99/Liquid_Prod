@@ -11,7 +11,7 @@ base_path = config.DEV_PATH if config.IS_DEV else prod_path
 sql_path = Path(__file__).parent / "sql" / "total_fund_tree"
 
 
-def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
+def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
     yearStr = str(folder_date.year)
     monthStr = ut.int_to_two_digit_str(folder_date.month)
     final_path = basePath / yearStr / monthStr / (ut.date_to_str(folder_date))
@@ -220,3 +220,32 @@ def update_total_fund_pv_report(to_date: date) -> None:
     print("Updated " + str(path/("Total Fund PV Report " +
           ut.date_to_str(to_date) + ".xlsx")))
     ut.delete_files_name_contains(path, "Total Fund PV Report.xlsx")
+
+
+def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
+    mv_df = (
+        ut.read_data_from_preston_with_sql_file(
+            sql_path/"gpf.sql", [ut.date_to_str(dt)])
+        .set_index("SCD_SEC_ID")
+        .filter(["Manager_Name", "BASE_Total_Market_Value"])
+    )
+    sheet = wb.sheets[0]
+    last_row = sheet.range("A1").end("down").row
+    excel_sec_id = sheet.range(f"A2:A{last_row}").value
+    reordered_sec_id = excel_sec_id + \
+        ut.get_values_not_in_list(mv_df.index.tolist(), excel_sec_id)
+    mv_df = mv_df.reindex(reordered_sec_id)
+    sheet.range("K1").value = mv_df
+    wb.sheets.add(ut.date_to_str(dt), after=sheet)
+    sheet.range(f"A1:D{last_row+1}").copy()
+    wb.sheets[ut.date_to_str(dt)].range("A1").paste("formats")
+    sheet.range(f"A1:D{last_row+1}").copy()
+    wb.sheets[ut.date_to_str(dt)].range("A1").paste("values")
+    wb.sheets[ut.date_to_str(dt)].autofit()
+
+
+def update_GPF_Managers_MV(to_date: date) -> None:
+    file_name = "GPF Managers Weekly & Monthly MV.xlsx"
+    path = create_folder_path(base_path, to_date, False) / "Queries"
+    ut.work_on_excel(GPF_Managers_MV_excel_operation,
+                     path / file_name, None, to_date)

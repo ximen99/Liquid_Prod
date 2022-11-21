@@ -12,7 +12,7 @@ base_path = config.DEV_PATH if config.IS_DEV else prod_path
 sql_path = Path(__file__).parent / "sql" / "lookthrough"
 
 
-def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
+def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
     yearStr = str(folder_date.year)
     final_path = basePath / yearStr / (ut.date_to_str(folder_date))
     if create_path:

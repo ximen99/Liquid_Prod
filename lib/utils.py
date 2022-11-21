@@ -5,6 +5,7 @@ from pathlib import Path
 import pyodbc
 import pandas as pd
 from typing import List
+import xlwings as xw
 
 
 def date_to_str(dt: date) -> str:
@@ -69,14 +70,14 @@ def replace_text_in_file(file_path, old_text, new_text):
           new_text + " in " + str(file_path))
 
 
-def replace_text_in_file_with_regex(file_path, old_text, new_text) -> None:
+def replace_text_in_file_with_regex(file_path, old_text_regex, new_text) -> None:
     import re
     with open(file_path, 'r') as file:
         filedata = file.read()
-    filedata = re.sub(old_text, new_text, filedata)
+    filedata = re.sub(old_text_regex, new_text, filedata)
     with open(file_path, 'w') as file:
         file.write(filedata)
-    print("replaced " + old_text + " with " +
+    print("replaced " + old_text_regex + " with " +
           new_text + " in " + str(file_path))
 
 
@@ -148,3 +149,21 @@ def loop_through_files_contains(path: Path, text: str, func, *args, **kwargs):
     for file in os.listdir(path):
         if text in file:
             func(path, file, *args, **kwargs)
+
+
+def work_on_excel(func, path: Path, save_path: Path = None, *args, **kwargs) -> None:
+    with xw.App(visible=False) as app:
+        wb = app.books.open(path)
+        func(wb, *args, **kwargs)
+        wb.save(save_path)
+        wb.close()
+    print(f"{path} is updated and saved to {save_path}")
+
+
+def get_values_not_in_list(list1, list2) -> List:
+    list1_copy = list1.copy()
+    list2_copy = list2.copy()
+    for item in list1_copy:
+        if item in list2_copy:
+            list1.remove(item)
+    return list1

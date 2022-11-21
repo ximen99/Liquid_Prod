@@ -11,7 +11,7 @@ prod_path = Path(
 base_path = config.DEV_PATH if config.IS_DEV else prod_path
 
 
-def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
+def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
     yearStr = str(folder_date.year)
     monthStr = ut.int_to_two_digit_str(folder_date.month)
     final_path = basePath / yearStr / monthStr / (ut.date_to_str(folder_date))
