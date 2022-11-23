@@ -5,5 +5,5 @@ from . import total_fund_bmk_tree
 from . import total_fund_tree
 from . import collateral
 from . import config
-from . import utils
 from . import cubefiles
+from . import utils

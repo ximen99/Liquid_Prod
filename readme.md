@@ -6,4 +6,5 @@
 
 # todo
 
-- add baseket and hedge to the file name in the env file.
+- fix total fund tree csv file not reading by redswan problem
+- total fund bmk tree

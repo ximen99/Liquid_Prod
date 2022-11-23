@@ -52,17 +52,19 @@ def create_template_folder(from_date: date, to_date: date) -> None:
 
 
 def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
-    def get_save_to_file_name(clientPorfolioID: str) -> str:
-        if "GPF" in clientPorfolioID:
-            return "PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx"
-        else:
-            return "PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx"
+
+    def get_save_to_file_name(clientPorfolioID: list) -> str:
+        for id in clientPorfolioID:
+            if id is not None and "GPF" in id:
+                return "PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx"
+        return "PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx"
 
     with xw.App(visible=False) as app:
         wb = app.books.open(
             path / file_name)
         sheet = wb.sheets[0]
-        save_to_name = get_save_to_file_name(sheet.range("I21").value)
+        save_to_name = get_save_to_file_name(
+            sheet.range("I21").expand("down").value)
         sheet.range("20:20").api.AutoFilter(Field := 1, Criteria1 := "=0")
         wb.save(path / save_to_name)
         wb.close()
@@ -192,7 +194,7 @@ def update_total_fund_tree(to_date: date) -> None:
         (sheet.range("A1:J"+str(last_row))
          .options(pd.DataFrame)
          .value
-         .to_csv(path / ("Total_Fund_Tree _" + ut.date_to_str(to_date) + ".csv"), index=False)
+         .to_csv(path / ("Total_Fund_Tree _" + ut.date_to_str(to_date) + ".csv"))
          )
         app.calculate()
         wb.save()

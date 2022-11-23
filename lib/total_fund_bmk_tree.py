@@ -63,7 +63,7 @@ def update_single_bmk_tree(folder_path: Path, file_name: str, scale_df: pd.DataF
         df = sheet.range("A1").options(pd.DataFrame, expand="table").value
         wb.save()
         wb.close()
-    df.to_csv(folder_path / file_name.replace(".xlsx", ".csv"), index=False)
+    df.to_csv(folder_path / file_name.replace(".xlsx", ".csv"))
     print(f"Updated {folder_path / file_name} and saved csv")
     print(
         f"Total Fund BMK Tree total MV is {df['Portfolio Market Value'].sum()} and PV report total is {pv_df['PV'].sum()}")
