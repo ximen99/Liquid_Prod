@@ -6,6 +6,7 @@ import pyodbc
 import pandas as pd
 from typing import List
 import xlwings as xw
+import re
 
 
 def date_to_str(dt: date) -> str:
@@ -71,7 +72,6 @@ def replace_text_in_file(file_path, old_text, new_text):
 
 
 def replace_text_in_file_with_regex(file_path, old_text_regex, new_text) -> None:
-    import re
     with open(file_path, 'r') as file:
         filedata = file.read()
     filedata = re.sub(old_text_regex, new_text, filedata)
@@ -79,6 +79,21 @@ def replace_text_in_file_with_regex(file_path, old_text_regex, new_text) -> None
         file.write(filedata)
     print("replaced " + old_text_regex + " with " +
           new_text + " in " + str(file_path))
+
+
+def rename_file_with_regex(path: Path, regex: str, new_name: str) -> None:
+    for file in os.listdir(path):
+        if re.search(regex, file):
+            os.rename(os.path.join(path, file), os.path.join(path, new_name))
+            print("Renamed " + str(file) + " to " + str(new_name))
+
+
+def get_files_with_regex(path: Path, regex: str) -> List[Path]:
+    files = []
+    for file in os.listdir(path):
+        if re.search(regex, file):
+            files.append(Path(path, file))
+    return files
 
 
 def copy_folder_with_check(from_path: date, to_path: date) -> None:

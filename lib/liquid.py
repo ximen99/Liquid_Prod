@@ -104,27 +104,51 @@ def get_filter_group_data() -> pd.DataFrame:
     return ut.read_data_from_preston_with_sql_file(path)
 
 
+def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
+    if type not in ["Basket_Hedge", "Illiquids", "Main", "IFT", "Fix"]:
+        raise Exception(
+            "type not valid, please choose in Basket_Hedge, Illiquids, Main, IFT, Fix")
+
+    folder_path = create_folder_path(base_path, dt, False) / "Files"
+    excel_file_regex = r"Positions_\d{8}_"+type+".xlsx"
+    file_path = ut.get_files_with_regex(folder_path, excel_file_regex)
+
+    if len(file_path) != 1:
+        raise Exception("file not found")
+    file_path = file_path[0]
+
+    def paste_data(wb: xw.Book, df: pd.DataFrame) -> None:
+        sheet = wb.sheets[0]
+        sheet.clear_contents()
+        sheet.range("A1").value = df
+    ut.work_on_excel(paste_data, file_path, None, df)
+    ut.rename_file_with_regex(
+        folder_path, excel_file_regex, f"Positions_{ut.date_to_str(dt)}_{type}.xlsx")
+
+
 def save_weekly_liquid_data(date) -> None:
     path = create_folder_path(base_path, date, True)
     to_download = {}
     prefix = "Positions_"+ut.date_to_str(date)
-    to_download[prefix+"_IFT.csv"] = get_ift_data(date)
-    to_download[prefix+"_Main.csv"] = get_main_data()
-    to_download[prefix+"_Illiquids.csv"] = get_illiquids_data()
+    to_download["IFT"] = get_ift_data(date)
+    to_download["Main"] = get_main_data()
+    to_download["Illiquids"] = get_illiquids_data()
     hedge = get_hedge_data()
     basket = get_basket_data()
-    to_download[prefix+"_Basket_Hedge.csv"] = pd.concat([basket, hedge])
+    to_download["Basket_Hedge"] = pd.concat([basket, hedge])
+
     for name, df in to_download.items():
-        df.to_csv(path / "Files" / name, index=False)
+        df.to_csv(path / "Files" / f"{prefix}{name}.csv", index=False)
         print("Saved "+name+" at "+str(path / "Files" / name))
+        update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
 
 
-def create_fix_file(date) -> None:
-    save_folder_path = create_folder_path(base_path, date) / "Files"
-    result_folder_path = create_folder_path(base_path, date) / "Results"
+def create_fix_file(dt: date) -> None:
+    save_folder_path = create_folder_path(base_path, dt) / "Files"
+    result_folder_path = create_folder_path(base_path, dt) / "Results"
     rejected_bond = (
         pd.read_csv(result_folder_path /
-                    ("Main_"+ut.date_to_str(date)+"_log.csv"))
+                    ("Main_"+ut.date_to_str(dt)+"_log.csv"))
         .query("`RMG_PositionStatus`.str.contains('Proxied')", engine="python")
         .query("`instrumentType`.str.contains('Bond')", engine="python")
         ["BCI_Id"]
@@ -137,15 +161,20 @@ def create_fix_file(date) -> None:
         else:
             return df
 
+    def update_excel(df: pd.DataFrame) -> pd.DataFrame:
+        update_load_excel_template(dt, "Fix", df.set_index("ExcludeOverride"))
+        return df
+
     main_df = get_main_data()
     (
         main_df
         .query("PositionId in @rejected_bond")
         .assign(ModelRuleEffective=lambda _df: _df.FloatingRateIndicator.astype("int64").map({1: "Reject Floating Rate Bond", 0: "Reject Fixed Coupon Bond"}))
         .pipe(lambda _df: check_na(_df))
-        .to_csv(save_folder_path / ("Positions_"+ut.date_to_str(date)+"_Fix.csv"), index=False)
+        .pipe(lambda _df: update_excel(_df))
+        .to_csv(save_folder_path / ("Positions_"+ut.date_to_str(dt)+"_Fix.csv"), index=False)
     )
-    print("Saved Positions_"+ut.date_to_str(date) +
+    print("Saved Positions_"+ut.date_to_str(dt) +
           "_Fix.csv at "+str(save_folder_path))
 
 
