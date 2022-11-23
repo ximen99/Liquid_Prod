@@ -57,7 +57,8 @@ def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
         for id in clientPorfolioID:
             if id is not None and "GPF" in id:
                 return "PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx"
-        return "PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx"
+            elif id is not None and "MTG" in id:
+                return "PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx"
 
     with xw.App(visible=False) as app:
         wb = app.books.open(
