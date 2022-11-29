@@ -235,8 +235,15 @@ def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
     sheet = wb.sheets[0]
     last_row = sheet.range("A1").end("down").row
     excel_sec_id = sheet.range(f"A2:A{last_row}").value
-    reordered_sec_id = excel_sec_id + \
-        ut.get_values_not_in_list(mv_df.index.tolist(), excel_sec_id)
+    new_positions = ut.get_values_not_in_list(
+        mv_df.index.tolist(), excel_sec_id)
+    if len(new_positions) > 0:
+        sheet.range(f"A{last_row-len(new_positions)+1}:D{last_row}").copy()
+        sheet.range(f"A{last_row}:D{last_row}").insert("down")
+        sheet.range(
+            f"A{last_row+1}").value = mv_df.loc[new_positions, "Manager_Name"].reset_index().values
+        last_row += len(new_positions)
+    reordered_sec_id = excel_sec_id + new_positions
     mv_df = mv_df.reindex(reordered_sec_id)
     sheet.range("K1").value = mv_df
     wb.sheets.add(ut.date_to_str(dt), after=sheet)

@@ -138,8 +138,8 @@ def save_weekly_liquid_data(date) -> None:
     to_download["Basket_Hedge"] = pd.concat([basket, hedge])
 
     for name, df in to_download.items():
-        df.to_csv(path / "Files" / f"{prefix}{name}.csv", index=False)
-        print("Saved "+name+" at "+str(path / "Files" / name))
+        df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
+        print(f"Saved {name} at "+str(path / "Files" / name))
         update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
 
 
@@ -149,8 +149,8 @@ def create_fix_file(dt: date) -> None:
     rejected_bond = (
         pd.read_csv(result_folder_path /
                     ("Main_"+ut.date_to_str(dt)+"_log.csv"))
-        .query("`RMG_PositionStatus`.str.contains('Proxied')", engine="python")
-        .query("`instrumentType`.str.contains('Bond')", engine="python")
+        .query("`RMG_PositionStatus`.str.contains('Proxied', na = False )", engine="python")
+        .query("`instrumentType`.str.contains('Bond', na = False)", engine="python")
         ["BCI_Id"]
         .tolist()
     )
