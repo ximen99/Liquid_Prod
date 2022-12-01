@@ -284,8 +284,8 @@ def create_pv_validation(dt: date) -> None:
     )
     pv_df = pd.read_excel(path / "PV Report Liquids.xlsx",
                           skiprows=19, usecols="B:M")
-    # ut.rename_file_with_regex(
-    #     path, "PV Report Liquids.xlsx", f"PV Report Liquids {ut.date_to_str(dt)}.xlsx")
+    ut.rename_file_with_regex(
+        path, "PV Report Liquids.xlsx", f"PV Report Liquids {ut.date_to_str(dt)}.xlsx")
     validation_path = ut.get_files_with_regex(
         path, r"^LiquidsDerivatives PV Validation .*\.xlsx")[0]
     ut.work_on_excel(update_pv_validation_excel,
