@@ -83,5 +83,6 @@ wcwidth==0.2.5
 webencodings==0.5.1
 websocket-client==1.4.2
 widgetsnbextension==4.0.3
+xlrd==2.0.1
 xlwings==0.28.5
 zipp==3.10.0

@@ -5,7 +5,7 @@ from . import config
 import pandas as pd
 import xlwings as xw
 import numpy as np
-
+from . import mds
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
@@ -292,3 +292,33 @@ def create_pv_validation(dt: date) -> None:
                      validation_path, mv_df=mv_df, pv_df=pv_df)
     ut.rename_file_with_regex(
         path, r"^LiquidsDerivatives PV Validation .*\.xlsx", f"LiquidsDerivatives PV Validation {ut.date_to_str(dt)}.xlsx")
+
+
+def counter_party_check(dt: date) -> None:
+    instruments = ["Interest Rate Vanilla Swap", "Interest Rate Cross Currency Basis Swap", "Interest Rate Overnight Index Swap",
+                   "Equity Index Swap", "FX Forward", "Equity Single Name Swap", "Fully Funded Swap", "FX Spot", "Repurchase Agreement", "Reverse Repo"]
+    df = (
+        get_filter_group_data()
+        .query("InstrumentType in @instruments")
+    )
+    counter_party = mds.get_counter_party_map(
+        dt)['COUNTERPARTY_OUTPUT'].tolist()
+    unmapped_counter_party = set(
+        df['CounterParty'].unique().tolist()) - set(counter_party)
+    if len(unmapped_counter_party) > 0:
+        print(f"Unmapped counter party: {unmapped_counter_party}")
+    else:
+        print("All counter party are mapped")
+
+
+def get_superD_BTRSEQ(dt: date) -> pd.DataFrame:
+    path = Path(r"T:\EDM\Sample Data\daily_dumps\SuperD") / ut.date_to_str(dt)
+    return (
+        pd.read_excel(
+            ut.get_files_with_regex(
+                path, r"^BTRSEQ.*\.xls")[0],
+            skiprows=4
+        )
+        .query("`Instrument Type` == 'Total Return Swap'")
+        .pivot_table(index="External ID", values=['External Trade ID', 'Volume'], aggfunc={'External Trade ID': 'count', 'Volume': 'sum'})
+    )
