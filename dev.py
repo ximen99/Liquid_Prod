@@ -13,4 +13,4 @@ from_date = date(2022, 11, 18)
 new_date = from_date + timedelta(days=7)
 lib.liquid.base_path
 
-lib.liquid.create_fix_file(new_date)
+lib.liquid.create_pv_validation(new_date)

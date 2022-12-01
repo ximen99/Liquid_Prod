@@ -4,6 +4,8 @@ from datetime import date, timedelta, datetime
 from . import config
 import pandas as pd
 import xlwings as xw
+import numpy as np
+
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
@@ -216,3 +218,77 @@ def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
           ("Portfolio Filter Group " + ut.date_to_str(to_date)+".xlsx")))
     ut.delete_files_with_extension(
         path, " Group " + ut.date_to_str(from_date)+".xlsx")
+
+
+def update_pv_validation_excel(wb: xw.Book, mv_df: pd.DataFrame, pv_df: pd.DataFrame) -> None:
+    # update RM PV Report tab data
+    wb.sheets["RM PV Report"].range("A1").value = pv_df.set_index("Level")
+    # update position level tab
+    position_sheet = wb.sheets["Positional Level"]
+    position_sheet.api.AutoFilter.ShowAllData()
+    position_sheet.range(
+        f"A3:L{position_sheet.range('A1').end('down').row}").clear_contents()
+    position_sheet.range("A1").value = (
+        mv_df
+        .copy()
+        .set_index("ParentPortfolioCode")
+        .assign(**{"Sum of BaseTotalMarketValue": lambda _df: np.where(np.logical_or(_df.index.str.startswith('E008'), _df.index.str.startswith('E004')), 0, _df["Sum of BaseTotalMarketValue"])})
+    )
+    position_sheet_last_row = position_sheet.range("A2").end("down").row
+    position_sheet.range("I3").expand("table").clear_contents()
+    position_sheet.range("I2:K2").copy(position_sheet.range(
+        f"I2:K{position_sheet_last_row}"))
+    position_sheet.api.Range("A1:K1").AutoFilter(2, "<>FX Forward")
+    position_sheet.api.Range("A1:K1").AutoFilter(
+        10, ">1000", xw.constants.AutoFilterOperator.xlOr, "<-1000")
+    position_sheet.api.Range("A1:K1").AutoFilter(
+        11, ">0.03", xw.constants.AutoFilterOperator.xlOr, "<-0.03")
+    # update portfolio level tab
+    portfolio_sheet = wb.sheets["Portfolio Level"]
+    old_week_df = portfolio_sheet.range("A3").options(
+        pd.DataFrame, expand="table").value
+    pivot = portfolio_sheet.api.PivotTables("PivotTable7")
+    pivot_cache = wb.api.PivotCaches().Create(SourceType=xw.constants.PivotTableSourceType.xlDatabase,
+                                              SourceData=position_sheet.range(f"A1:H{position_sheet_last_row}").api)
+    pivot.ChangePivotCache(pivot_cache)
+    pivot.PivotCache().Refresh()
+    pivot_last_row = portfolio_sheet.range("A3").end("down").row
+    portfolio_sheet.range(
+        f"C5:F{portfolio_sheet.range('C3').end('down').row}").clear_contents()
+    portfolio_sheet.range("C4:E4").copy(
+        portfolio_sheet.range(f"C4:E{pivot_last_row-1}"))
+    portfolio_sheet.range(
+        f"C{pivot_last_row}").formula = f"=SUM(C4:C{pivot_last_row-1})"
+    portfolio_sheet.range(
+        f"D{pivot_last_row}").formula = f"=C{pivot_last_row}-B{pivot_last_row}"
+    portfolio_sheet.range(
+        f"F{pivot_last_row}").formula = f"='RM PV Report'!C2"
+    portfolio_sheet.range(f"E{pivot_last_row-1}").copy(
+        portfolio_sheet.range(f"E{pivot_last_row}"))
+    for i in range(4, pivot_last_row):
+        if portfolio_sheet.range(f"A{i}").value in old_week_df.index:
+            portfolio_sheet.range(f"F{i}").value = old_week_df.loc[portfolio_sheet.range(
+                f"A{i}").value, "Comments"]
+
+
+def create_pv_validation(dt: date) -> None:
+
+    path = create_folder_path(base_path, dt)
+    mv_df = (
+        pd.concat([get_filter_group_data(), get_ift_data(dt)])
+        .astype({"Amount": "float", "BaseTotalMarketValue": "float"})
+        .groupby(["ParentPortfolioCode", "InstrumentTypeDesc", "PositionId", "securityName", "LocalPriceCcyCode", "MaturityDate"], dropna=False, as_index=False)
+        [["Amount", "BaseTotalMarketValue"]]
+        .sum()
+        .rename(columns={"Amount": "Sum of Amount", "BaseTotalMarketValue": "Sum of BaseTotalMarketValue"})
+    )
+    pv_df = pd.read_excel(path / "PV Report Liquids.xlsx",
+                          skiprows=19, usecols="B:M")
+    # ut.rename_file_with_regex(
+    #     path, "PV Report Liquids.xlsx", f"PV Report Liquids {ut.date_to_str(dt)}.xlsx")
+    validation_path = ut.get_files_with_regex(
+        path, r"^LiquidsDerivatives PV Validation .*\.xlsx")[0]
+    ut.work_on_excel(update_pv_validation_excel,
+                     validation_path, mv_df=mv_df, pv_df=pv_df)
+    ut.rename_file_with_regex(
+        path, r"^LiquidsDerivatives PV Validation .*\.xlsx", f"LiquidsDerivatives PV Validation {ut.date_to_str(dt)}.xlsx")
