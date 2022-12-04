@@ -6,6 +6,7 @@ import pandas as pd
 import xlwings as xw
 import numpy as np
 from . import mds
+from typing import List
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
@@ -322,3 +323,28 @@ def get_superD_BTRSEQ(dt: date) -> pd.DataFrame:
         .query("`Instrument Type` == 'Total Return Swap'")
         .pivot_table(index="External ID", values=['External Trade ID', 'Volume'], aggfunc={'External Trade ID': 'count', 'Volume': 'sum'})
     )
+
+
+def get_index_map(index: List[str], dt: date):
+    df_data = get_all_liquid_except_CIBC()
+    df_final = pd.DataFrame()
+    df_map = mds.get_benchmark_security_map(dt)
+    sec_id_ls = []
+
+    for i in index:
+        sec_id = (
+            df_data
+            .query("InstrumentTypeDesc == 'Equity Index Swap' & SwapLegTypeCode == 'EQUITY_LEG'")
+            .query("securityName.str.contains(@i) & not SwapIndexId.isnull()", engine='python')
+            [["SecId", "securityName", "SwapIndexId"]]
+        )
+        if len(sec_id) > 0:
+            print(
+                f"for {i}, find {df_.iloc[0].loc[['SecId','securityName','SwapIndexId']].to_dict()}")
+            sec_id_ls.append(sec_id.iloc[0])
+        else:
+            print(f"can't find sec_id for {index}")
+    for sec_id in sec_id_ls:
+        df_final = pd.concat([df_final, df_map.query("SEC_ID == @sec_id")[
+            ['SEC_ID', 'ACC_SYS_SEC_ID', 'BENCHMARK_ID', 'INDEX_NAME', 'MSCI_RM_INDEX_ID']]])
+    return df_final
