@@ -239,7 +239,7 @@ def update_pv_validation_excel(wb: xw.Book, mv_df: pd.DataFrame, pv_df: pd.DataF
     position_sheet.range("I3").expand("table").clear_contents()
     position_sheet.range("I2:K2").copy(position_sheet.range(
         f"I2:K{position_sheet_last_row}"))
-    position_sheet.api.Range("A1:K1").AutoFilter(2, "<>FX Forward")
+    position_sheet.api.Range("A1:K1").AutoFilter(2, "<>*FX*")
     position_sheet.api.Range("A1:K1").AutoFilter(
         10, ">1000", xw.constants.AutoFilterOperator.xlOr, "<-1000")
     position_sheet.api.Range("A1:K1").AutoFilter(
@@ -272,11 +272,21 @@ def update_pv_validation_excel(wb: xw.Book, mv_df: pd.DataFrame, pv_df: pd.DataF
                 f"A{i}").value, "Comments"]
 
 
+def check_date(df: pd.DataFrame, dt: date) -> pd.DataFrame:
+    if len(df["RiskDate"].unique()) > 1:
+        raise ValueError(f"Multiple RiskDate in Data")
+    if df["RiskDate"].unique()[0] != ut.date_to_str(dt):
+        raise ValueError(
+            f"RiskDate in Data is {ut.date_to_str(df['RiskDate'].unique()[0])}, not {dt}")
+    return df
+
+
 def create_pv_validation(dt: date) -> None:
 
     path = create_folder_path(base_path, dt)
     mv_df = (
         pd.concat([get_filter_group_data(), get_ift_data(dt)])
+        .pipe(check_date, dt)
         .astype({"Amount": "float", "BaseTotalMarketValue": "float"})
         .groupby(["ParentPortfolioCode", "InstrumentTypeDesc", "PositionId", "securityName", "LocalPriceCcyCode", "MaturityDate"], dropna=False, as_index=False)
         [["Amount", "BaseTotalMarketValue"]]
