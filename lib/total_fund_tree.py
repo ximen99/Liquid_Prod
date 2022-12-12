@@ -104,10 +104,11 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
     with xw.App(visible=False) as app:
         wb = app.books.open(file_path)
         sheet = wb.sheets[0]
-        sheet.range("A21:A25").value = [
-            [datetime(to_date.year, to_date.month, to_date.day)]]*5
-        sheet.range("F21:F25").value = [[fx]]*5
-        for r in range(21, 26):
+        num_of_positions = sheet.range("A21").end("down").row - 20
+        sheet.range("A21").expand("down").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
+        sheet.range("F21").expand("down").value = [[fx]]*num_of_positions
+        for r in range(21, 21+num_of_positions):
             sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
                 f"D{r}").value, "PV"]
         app.calculate()
@@ -116,6 +117,13 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
     ut.delete_files_name_contains(
         folder_path, file_prefix + ut.date_to_str(from_date))
     print("Updated " + str(save_to_path))
+
+
+def get_gpf_mv(dt: date):
+    return (
+        ut.read_data_from_preston_with_sql_file(
+            sql_path/"gpf.sql", [ut.date_to_str_with_dash(dt)])
+    )
 
 
 def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
@@ -136,24 +144,24 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
         .set_index("Name")
     )
     gpf_mv = (
-        ut.read_data_from_preston_with_sql_file(
-            sql_path/"gpf.sql", [ut.date_to_str_with_dash(to_date)])
+        get_gpf_mv(to_date)
         .set_index("SCD_SEC_ID")
     )
 
     with xw.App(visible=False) as app:
         wb = app.books.open(file_path)
         sheet = wb.sheets[0]
-        sheet.range("A3:A10").value = [
-            [datetime(to_date.year, to_date.month, to_date.day)]]*8
-        sheet.range("A16:A23").value = [
-            [datetime(to_date.year, to_date.month, to_date.day)]]*8
-        for r in range(3, 11):
+        num_of_positions = sheet.range("A3").end("down").row - 2
+        sheet.range("A3").expand("down").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
+        sheet.range("A16").expand("down").value = [
+            [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
+        for r in range(3, 3+num_of_positions):
             sheet.range(f"H{r}").value = gpf_mv.loc[sheet.range(
                 f"E{r}").value, "BASE_Total_Market_Value"]
             sheet.range(f"I{r}").value = gpf_mv.loc[sheet.range(
                 f"E{r}").value, "FX_RATE"]
-        for r in range(16, 24):
+        for r in range(18, 18+num_of_positions):
             sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
                 f"D{r}").value, "PV"]
         app.calculate()
@@ -176,7 +184,7 @@ def get_scale_df(folder_path: Path, folder_date: date) -> pd.DataFrame:
     mtg_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation E0043 " +
                                                             ut.date_to_str(folder_date) + ".xlsx"), 27)
     gpf_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation GPF " +
-                                                            ut.date_to_str(folder_date) + ".xlsx"), 25)
+                                                            ut.date_to_str(folder_date) + ".xlsx"), 29)
     return pd.concat([mtg_scale, gpf_scale], axis=0)
 
 
