@@ -247,7 +247,7 @@ def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
         mv_df.index.tolist(), excel_sec_id)
     if len(new_positions) > 0:
         sheet.range(f"A{last_row-len(new_positions)+1}:D{last_row}").copy()
-        sheet.range(f"A{last_row}:D{last_row}").insert("down")
+        sheet.range(f"A{last_row+1}:D{last_row+1}").insert("down")
         sheet.range(
             f"A{last_row+1}").value = mv_df.loc[new_positions, "Manager_Name"].reset_index().values
         last_row += len(new_positions)
