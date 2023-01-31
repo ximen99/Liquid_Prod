@@ -2,10 +2,12 @@ from pathlib import Path
 from . import utils as ut
 from datetime import date
 from . import config
+import pandas as pd
 
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Repo")
 base_path = config.DEV_PATH if config.IS_DEV else prod_path
+sql_path = Path(__file__).parent / "sql" / "repo"
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
@@ -40,3 +42,25 @@ def create_template_folder(from_date: date, to_date: date) -> None:
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(to_date)
     update_env_file(from_date, to_date)
+
+
+def get_sql_data() -> pd.DataFrame:
+    path = sql_path / "repo.sql"
+    return ut.read_data_from_preston_with_sql_file(path)
+
+
+def _excel_func(wb) -> None:
+    wb.sheets[0].clear_contents()
+    wb.sheets[0].range("A1").value = get_sql_data().set_index("Valuation_date")
+
+
+def update_excel_file(to_date: date) -> None:
+    file_path = create_folder_path(
+        base_path, to_date, False) / "REPO FINAL.xlsx"
+    ut.work_on_excel(_excel_func, file_path)
+
+
+def convert_to_csv(to_date: date) -> None:
+    file_path = create_folder_path(
+        base_path, to_date, False) / "REPO FINAL.xlsx"
+    ut.excel_to_csv(file_path)

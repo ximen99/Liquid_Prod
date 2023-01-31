@@ -43,3 +43,8 @@ def create_template_folder(from_date: date, to_date: date) -> None:
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(to_date)
     update_env_file(from_date, to_date)
+
+
+def convert_to_csv(to_date: date) -> None:
+    to_path = create_folder_path(base_path, to_date, False)
+    ut.excel_to_csv(to_path / f"OTC_Collateral_{ut.date_to_str(to_date)}.xlsx")
