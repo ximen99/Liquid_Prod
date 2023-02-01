@@ -104,11 +104,14 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
     with xw.App(visible=False) as app:
         wb = app.books.open(file_path)
         sheet = wb.sheets[0]
-        num_of_positions = sheet.range("A21").end("down").row - 20
-        sheet.range("A21").expand("down").value = [
+        row_start = 21
+        num_of_positions = sheet.range(
+            f"A{row_start}").end("down").row - (row_start-1)
+        sheet.range(f"A{row_start}").expand("down").value = [
             [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
-        sheet.range("F21").expand("down").value = [[fx]]*num_of_positions
-        for r in range(21, 21+num_of_positions):
+        sheet.range(f"F{row_start}").expand(
+            "down").value = [[fx]]*num_of_positions
+        for r in range(row_start, row_start+num_of_positions):
             sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
                 f"D{r}").value, "PV"]
         app.calculate()
