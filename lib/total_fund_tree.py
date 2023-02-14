@@ -123,10 +123,10 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
 
 
 def get_gpf_mv(dt: date):
-    return (
-        ut.read_data_from_preston_with_sql_file(
-            sql_path/"gpf.sql", [ut.date_to_str_with_dash(dt)])
-    )
+    sql = ut.read_sql_file(sql_path/"gpf.sql")
+    sql = ut.replace_mark_with_text(
+        sql, {"@valuationDate": f"''{ut.date_to_str_with_dash(dt)}''"})
+    return ut.read_data_from_preston_with_string_single_statement(sql)
 
 
 def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
@@ -240,10 +240,9 @@ def update_total_fund_pv_report(to_date: date) -> None:
 
 def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
     mv_df = (
-        ut.read_data_from_preston_with_sql_file(
-            sql_path/"gpf.sql", [ut.date_to_str(dt)])
+        get_gpf_mv(dt)
         .set_index("SCD_SEC_ID")
-        .filter(["Manager_Name", "BASE_Total_Market_Value"])
+        .filter(["SHORT_NAME", "MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV"])
     )
     sheet = wb.sheets[0]
     last_row = sheet.range("A1").end("down").row
@@ -254,7 +253,7 @@ def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
         sheet.range(f"A{last_row-len(new_positions)+1}:D{last_row}").copy()
         sheet.range(f"A{last_row+1}:D{last_row+1}").insert("down")
         sheet.range(
-            f"A{last_row+1}").value = mv_df.loc[new_positions, "Manager_Name"].reset_index().values
+            f"A{last_row+1}").value = mv_df.loc[new_positions, "SHORT_NAME"].reset_index().values
         last_row += len(new_positions)
     reordered_sec_id = excel_sec_id + new_positions
     mv_df = mv_df.reindex(reordered_sec_id)

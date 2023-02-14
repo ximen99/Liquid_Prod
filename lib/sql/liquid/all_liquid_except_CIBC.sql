@@ -1,3 +1,4 @@
 SELECT *
 FROM [RMRepository].[rmstg].[RmLiquidDerivativeOutput] 
 WHERE ISR_streamName NOT IN ('ICBCPP_EXT_EQUITY','ICBCIF_EXT_EQUITY')
+AND ParentPortfolioCode NOT IN ('E0071N','ME0017','ME0044','ME0358','E0074','ME0025','ME173B','ME170D','ME170SIN','ME170UIN')

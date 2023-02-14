@@ -128,6 +128,20 @@ def read_data_from_preston_with_string(sql: str, params: list = None) -> pd.Data
     return df
 
 
+def read_data_from_preston_with_string_single_statement(sql: str, params: list = None) -> pd.DataFrame:
+    cnn = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
+                         'Server=preston;'
+                         'Trusted_Connection=yes;', autocommit=True, readonly=True)
+    df = pd.read_sql(sql, cnn, params=params)
+    return df
+
+
+def replace_mark_with_text(sql: str, replace_dict: dict) -> str:
+    for key, value in replace_dict.items():
+        sql = sql.replace(key, value)
+    return sql
+
+
 def read_sql_file(path: str) -> str:
     with open(path, "r") as file:
         sql = file.read()
