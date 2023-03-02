@@ -79,6 +79,14 @@ def create_extMan_PV_reports(to_date: date) -> None:
         path, "PV Report Liquids External Manager", update_extMan_PV_report, to_date)
 
 
+def get_fx_rate(to_date: date) -> float:
+    return (
+        ut.read_data_from_preston_with_sql_file(
+            sql_path/"fx.sql", [ut.date_to_str_with_dash(to_date)])
+        .loc[0, "IPS_CAD_QUOTE_MID"]
+    )
+
+
 def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
     file_prefix = "Scale calculation E0043 "
     folder_path = create_folder_path(
@@ -96,10 +104,7 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
         .filter(["Name", "PV"])
         .set_index("Name")
     )
-    fx = (
-        ut.read_data_from_preston_with_sql_file(
-            sql_path/"fx.sql", [ut.date_to_str_with_dash(to_date)])
-        .loc[0, "IPS_CAD_QUOTE_MID"])
+    fx = get_fx_rate(to_date)
 
     with xw.App(visible=False) as app:
         wb = app.books.open(file_path)
@@ -150,7 +155,7 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
         get_gpf_mv(to_date)
         .set_index("SCD_SEC_ID")
     )
-
+    fx = get_fx_rate(to_date)
     with xw.App(visible=False) as app:
         wb = app.books.open(file_path)
         sheet = wb.sheets[0]
@@ -163,9 +168,8 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
             [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
         for r in range(row_start_mv, row_start_mv+num_of_positions):
             sheet.range(f"H{r}").value = gpf_mv.loc[sheet.range(
-                f"E{r}").value, "BASE_Total_Market_Value"]
-            sheet.range(f"I{r}").value = gpf_mv.loc[sheet.range(
-                f"E{r}").value, "FX_RATE"]
+                f"E{r}").value, "MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV"]
+            sheet.range(f"I{r}").value = fx
         for r in range(row_start_pv, row_start_pv+num_of_positions):
             sheet.range(f"E{r}").value = pv_data.loc[sheet.range(
                 f"D{r}").value, "PV"]
