@@ -265,8 +265,12 @@ def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
     wb.sheets.add(ut.date_to_str(dt), after=sheet)
     sheet.range(f"A1:D{last_row+1}").copy()
     wb.sheets[ut.date_to_str(dt)].range("A1").paste("formats")
-    sheet.range(f"A1:D{last_row+1}").copy()
-    wb.sheets[ut.date_to_str(dt)].range("A1").paste("values")
+
+    df = sheet.range(
+        f"A1:D{last_row+1}").options(pd.DataFrame).value
+    df = pd.concat([df.query("`Base MV` != 'N/A'"),
+                   df.query("`Base MV` == 'N/A'")])
+    wb.sheets[ut.date_to_str(dt)].range("A1").value = df
     wb.sheets[ut.date_to_str(dt)].autofit()
 
 
