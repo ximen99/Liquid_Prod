@@ -7,7 +7,7 @@ SELECT O.RiskDate AS Valuation_date
 				THEN O.UnderlyingBondParAmount
 			END
 			AS BCI_underlyingParAmount
-	 ,O.InstrumentTypeDesc
+	 ,O.InstrumentTypeDesc AS InstrumentType
 	 ,CASE WHEN O.InstrumentTypeCode IN ('REPO_SBB','REPO')
 				THEN 'REPO'
 			WHEN O.InstrumentTypeCode IN ('REPO_BSB','REV_REPO')
