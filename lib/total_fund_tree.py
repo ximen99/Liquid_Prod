@@ -160,8 +160,8 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
         wb = app.books.open(file_path)
         sheet = wb.sheets[0]
         row_start_mv = 3
-        row_start_pv = 18
         num_of_positions = sheet.range(f"A{row_start_mv}").end("down").row - 2
+        row_start_pv = row_start_mv + num_of_positions + 5
         sheet.range(f"A{row_start_mv}").expand("down").value = [
             [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
         sheet.range(f"A{row_start_pv}").expand("down").value = [
