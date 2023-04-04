@@ -66,7 +66,8 @@ def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
         sheet = wb.sheets[0]
         save_to_name = get_save_to_file_name(
             sheet.range("I21").expand("down").value)
-        sheet.range("20:20").api.AutoFilter(Field := 1, Criteria1 := "=0")
+        sheet.range("20:20").api.AutoFilter(Field := 1, Criteria1 := ['0', '-1'],
+                                            Operator := xw.constants.AutoFilterOperator.xlFilterValues)
         wb.save(path / save_to_name)
         wb.close()
     ut.delete_files_name_contains(path, file_name)
