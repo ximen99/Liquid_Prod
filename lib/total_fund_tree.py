@@ -191,6 +191,7 @@ def get_scale_df(folder_path: Path, folder_date: date) -> pd.DataFrame:
             .assign(port_code=lambda _df: _df["port_code"].str.replace(" Scale", ""))
             .set_index("port_code")
         )
+    # update skip row number when there're new portfoloios
     mtg_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation E0043 " +
                                                             ut.date_to_str(folder_date) + ".xlsx"), 27)
     gpf_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation GPF " +
