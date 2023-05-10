@@ -162,7 +162,7 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
         sheet = wb.sheets[0]
         row_start_mv = 3
         num_of_positions = sheet.range(f"A{row_start_mv}").end("down").row - 2
-        row_start_pv = row_start_mv + num_of_positions + 5
+        row_start_pv = 26
         sheet.range(f"A{row_start_mv}").expand("down").value = [
             [datetime(to_date.year, to_date.month, to_date.day)]]*num_of_positions
         sheet.range(f"A{row_start_pv}").expand("down").value = [
@@ -193,9 +193,9 @@ def get_scale_df(folder_path: Path, folder_date: date) -> pd.DataFrame:
         )
     # update skip row number when there're new portfoloios
     mtg_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation E0043 " +
-                                                            ut.date_to_str(folder_date) + ".xlsx"), 27)
+                                                            ut.date_to_str(folder_date) + ".xlsx"), 36)
     gpf_scale = read_scale(folder_path/"Scale Calculation"/("Scale calculation GPF " +
-                                                            ut.date_to_str(folder_date) + ".xlsx"), 29)
+                                                            ut.date_to_str(folder_date) + ".xlsx"), 47)
     return pd.concat([mtg_scale, gpf_scale], axis=0)
 
 
