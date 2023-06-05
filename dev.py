@@ -7,8 +7,8 @@ warnings.filterwarnings("ignore")
 pd.options.display.float_format = '{:.2f}'.format
 
 # last week's validation date
-from_date = date(2023, 3, 17)
+from_date = date(2023, 4, 28)
 # new week's date to work on
-new_date = from_date + timedelta(days=7)
+new_date = from_date + timedelta(days=2)
 
-lib.total_fund_tree.update_GPF_scale_calc(from_date, new_date)
+lib.total_fund_tree.update_mtg_scale_calc(from_date, new_date)
