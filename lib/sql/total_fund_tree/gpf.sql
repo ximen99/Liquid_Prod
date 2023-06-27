@@ -48,7 +48,7 @@ FROM rpt_SCD.[Master_FN_POSITION] POS1
       --                  AND 
                         POS1.EFFECTIVE_DATE = @valuationDate
                         AND POS1.SOURCE = ''SCD_MAIN''
-                        AND INSTRUMENT_TYPE_CODE NOT IN (''ALM'', ''CASH'', ''FX_FWD'',''FX_SWP'',''MMKT_POOL_FUND'',''EQY_POOL_FUND'',''EQY_IDX_SWP'',''EQY_SINGLE_NAME_SWP'')
+                        AND INSTRUMENT_TYPE_CODE NOT IN (''ALM'', ''CASH'', ''FX_FWD'',''FX_SWP'',''MMKT_POOL_FUND'',''EQY_POOL_FUND'',''EQY_IDX_SWP'',''EQY_SINGLE_NAME_SWP'', ''FX_SPOT'')
                         AND POS1.PORTFOLIO_CALCULATION = ''DWH_IBOR'';
 
  
