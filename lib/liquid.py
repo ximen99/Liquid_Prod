@@ -160,7 +160,7 @@ def save_weekly_liquid_data(date) -> None:
     for name, df in to_download.items():
         df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
         print(f"Saved {name} at "+str(path / "Files" / name))
-        # update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
+        update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
 
 
 def create_fix_file(dt: date) -> None:
