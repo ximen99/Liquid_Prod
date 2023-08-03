@@ -97,6 +97,22 @@ def get_ift_data(date: date) -> pd.DataFrame:
     return ut.read_data_from_preston_with_sql_file(path, [date_str])
 
 
+def get_gpf_neutralization_data(port_code: str) -> pd.DataFrame:
+    sql = ut.read_sql_file(sql_path/"gpf_neutralization.sql")
+    sql = ut.replace_mark_with_text(
+        sql, {"?": f"{port_code}"})
+    return ut.read_data_from_preston_with_string_single_statement(sql)
+
+
+def get_all_gpf_neutralization_data() -> pd.DataFrame:
+    port_codes = ["E0075", "E0178", "E0063"]
+    df = pd.DataFrame()
+    for port_code in port_codes:
+        df = df.append(get_gpf_neutralization_data(
+            port_code), ignore_index=True)
+    return df
+
+
 def get_main_data() -> pd.DataFrame:
     path = sql_path / "main.sql"
     return ut.read_data_from_preston_with_sql_file(path)
@@ -134,7 +150,8 @@ def save_weekly_liquid_data(date) -> None:
     to_download = {}
     prefix = "Positions_"+ut.date_to_str(date)
     to_download["IFT"] = get_ift_data(date)
-    to_download["Main"] = get_main_data()
+    gpf_neut = get_all_gpf_neutralization_data()
+    to_download["Main"] = pd.concat([get_main_data(), gpf_neut])
     to_download["Illiquids"] = get_illiquids_data()
     hedge = get_hedge_data()
     basket = get_basket_data()
@@ -143,7 +160,7 @@ def save_weekly_liquid_data(date) -> None:
     for name, df in to_download.items():
         df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
         print(f"Saved {name} at "+str(path / "Files" / name))
-        update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
+        # update_load_excel_template(date, name, df.set_index("ExcludeOverride"))
 
 
 def create_fix_file(dt: date) -> None:
