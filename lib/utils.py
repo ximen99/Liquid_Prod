@@ -196,3 +196,13 @@ def get_values_not_in_list(list1, list2) -> List:
         if item in list2_copy:
             list1.remove(item)
     return list1
+
+
+def read_log_files_from_folder(path: Path) -> pd.DataFrame:
+    combined_df = pd.DataFrame()
+    files = get_files_with_regex(path, ".*_Log.csv")
+    for file in files:
+        df = pd.read_csv(file)
+        df["file_name"] = str(file.name)
+        combined_df = pd.concat([combined_df, df])
+    return combined_df

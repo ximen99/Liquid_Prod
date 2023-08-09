@@ -123,6 +123,16 @@ def get_filter_group_data() -> pd.DataFrame:
     return ut.read_data_from_preston_with_sql_file(path)
 
 
+def get_interest_rate_swap_data() -> pd.DataFrame:
+    sql = ut.read_sql_file(sql_path / "interest_rate_swap.sql")
+    df = ut.read_data_from_preston_with_string_single_statement(sql)
+    rule = 'RSM_InterestRateSwap_PayFloatReceiveFloat'
+    df['ModelRuleEffective'] = rule
+    df['ModelRuleOverride'] = rule
+    df['ModelRuleDefault'] = rule
+    return df
+
+
 def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
     if type not in ["Basket_Hedge", "Illiquids", "Main", "IFT", "Fix"]:
         raise Exception(
@@ -150,8 +160,8 @@ def save_weekly_liquid_data(date) -> None:
     to_download = {}
     prefix = "Positions_"+ut.date_to_str(date)
     to_download["IFT"] = get_ift_data(date)
-    gpf_neut = get_all_gpf_neutralization_data()
-    to_download["Main"] = pd.concat([get_main_data(), gpf_neut])
+    to_download["Main"] = pd.concat(
+        [get_main_data(), get_all_gpf_neutralization_data(), get_interest_rate_swap_data()])
     to_download["Illiquids"] = get_illiquids_data()
     hedge = get_hedge_data()
     basket = get_basket_data()
@@ -375,3 +385,9 @@ def get_index_map(index: List[str], dt: date):
         df_final = pd.concat([df_final, df_map.query("SEC_ID == @sec_id")[
             ['SEC_ID', 'ACC_SYS_SEC_ID', 'BENCHMARK_ID', 'INDEX_NAME', 'MSCI_RM_INDEX_ID']]])
     return df_final
+
+
+def compile_log(dt: date) -> None:
+    path = create_folder_path(base_path, dt) / "Results"
+    log = ut.read_log_files_from_folder(path)
+    log.to_csv(path / "log.csv", index=False)
