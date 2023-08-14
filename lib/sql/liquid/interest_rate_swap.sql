@@ -1538,5 +1538,7 @@ cross APPLY [RM_Reference].[getReportTagValue_Portfolio](SourceSystem, ISR_strea
 where 
  ExcludeOverride <> ''Y''
  )
- select * from outputView'
+ select * from outputView
+ where SwapLegTypeCode <> ''FIXED_LEG''
+ '
 EXECUTE(@SQL)
