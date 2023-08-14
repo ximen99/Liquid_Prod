@@ -3,7 +3,8 @@ SET NOCOUNT ON
 DECLARE @SQL VARCHAR(MAX)
 SET @SQL = '
 use RMRepository
-drop table if exists #collapsedLegs;
+drop table if exists #collapsedLegs
+;
 
 ;with doubleFloat
 as
@@ -32,7 +33,8 @@ WHERE ISR_streamName LIKE ''%IRS''
 --AND SwapLegTypeCode   = ''FIXED_LEG''
   and SharesOrParValue < 0
    and PositionParentId in (select PositionParentId   from doubleFloat)
- ),
+ )
+ ,
  collapsedLegs
  as
  (
@@ -655,7 +657,9 @@ END
 update #allSourceModelled
 set ReferenceRateCurvePay
  =
-    CASE		 WHEN ReferenceRateCurvePay IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''						
+    CASE		 WHEN ReferenceRateCurvePay IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''
+				 WHEN ReferenceRateCurvePay = ''CAD Swap'' and ReferenceRateTermPay=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+						
 			 WHEN ReferenceRateCurvePay = ''CDOR'' THEN ''CAD Swap''
 			 WHEN ReferenceRateCurvePay = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
 			 WHEN ReferenceRateCurvePay IS NULL THEN ''''
@@ -663,7 +667,9 @@ set ReferenceRateCurvePay
     END
 	,
 	ReferenceRateCurveRec =
-    CASE		 WHEN ReferenceRateCurveRec IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''						
+    CASE		 WHEN ReferenceRateCurveRec IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
+					 WHEN ReferenceRateCurveRec = ''CAD Swap'' and ReferenceRateTermRec=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+				
 			 WHEN ReferenceRateCurveRec = ''CDOR'' THEN ''CAD Swap''
 			 WHEN ReferenceRateCurveRec = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
 			 WHEN ReferenceRateCurveRec IS NULL THEN ''''
@@ -676,7 +682,7 @@ set ReferenceRateCurvePay
 
 
 --Derive best Exchange traded Id for model
--- This will recognize any override ids previously applied
+-- This will recognize any override id''s previously applied
 
 UPDATE
 #allSourceModelled
@@ -756,13 +762,15 @@ END
 UPDATE
  #allSourceModelled
  SET  referenceCurve =  
-    CASE		 WHEN referenceCurve IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''						
+    CASE		 WHEN referenceCurve IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
+				 WHEN referenceCurve = ''CDOR'' and ReferenceRateTerm=''1D''  THEN ''CAD CORRA OIS (SP)''
+				
 			 WHEN referenceCurve = ''CDOR'' THEN ''CAD Swap''
 			 WHEN referenceCurve = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
 			 WHEN referenceCurve IS NULL THEN ''''
 			 ELSE referenceCurve
     END 
- WHERE referenceCurve <> ''US Prime Rate'';		-- Dont overwrite cases of Prime rate set in Antares view
+ WHERE referenceCurve <> ''US Prime Rate'';		-- Don''t overwrite cases of Prime rate set in Antares view
 
  --DayCountBasis  (function will pass through already formated dayCount values)
  
@@ -1080,7 +1088,27 @@ AND NOT (instrumentGroupCode = ''OPT'' AND MaturityDate > RiskDate)	--Exclude ze
 AND NOT (instrumentGroupCode = ''SWAP'' AND coalesce(ExpiryDate	, MaturityDate) > RiskDate) --Exclude zero MV swaps if they are at/after maturity date
 AND LocalTotalMarketValue  = 0;
 
-
+update #allSourceModelled
+set ReferenceRateCurvePay
+ =
+    CASE		 WHEN ReferenceRateCurvePay IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''
+				 WHEN ReferenceRateCurvePay = ''CAD Swap'' and ReferenceRateTermPay=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+						
+			 WHEN ReferenceRateCurvePay = ''CDOR'' THEN ''CAD Swap''
+			 WHEN ReferenceRateCurvePay = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+			 WHEN ReferenceRateCurvePay IS NULL THEN ''''
+			 ELSE ReferenceRateCurvePay
+    END
+	,
+	ReferenceRateCurveRec =
+    CASE		 WHEN ReferenceRateCurveRec IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
+					 WHEN ReferenceRateCurveRec = ''CAD Swap'' and ReferenceRateTermRec=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+				
+			 WHEN ReferenceRateCurveRec = ''CDOR'' THEN ''CAD Swap''
+			 WHEN ReferenceRateCurveRec = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+			 WHEN ReferenceRateCurveRec IS NULL THEN ''''
+			 ELSE ReferenceRateCurveRec
+    END
 
 
 -- Now nest temp table in output view
