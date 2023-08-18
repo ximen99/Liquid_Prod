@@ -312,7 +312,8 @@ def create_pv_validation(dt: date) -> None:
 
     path = create_folder_path(base_path, dt)
     mv_df = (
-        pd.concat([get_filter_group_data(), get_ift_data(dt)])
+        pd.concat([get_filter_group_data(), get_ift_data(
+            dt), get_interest_rate_swap_data()])
         .pipe(check_date, dt)
         .astype({"Amount": "float", "BaseTotalMarketValue": "float"})
         .groupby(["ParentPortfolioCode", "InstrumentTypeDesc", "PositionId", "securityName", "LocalPriceCcyCode", "MaturityDate"], dropna=False, as_index=False)
