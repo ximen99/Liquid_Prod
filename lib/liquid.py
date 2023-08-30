@@ -11,7 +11,7 @@ from typing import List
 prod_path = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
 base_path = config.DEV_PATH if config.IS_DEV else prod_path
-sql_path = Path(__file__).parent / "sql" / "liquid"
+sql_path = config.SQL_PATH / "liquid"
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
@@ -133,6 +133,24 @@ def get_interest_rate_swap_data() -> pd.DataFrame:
     return df
 
 
+def get_bayview_data(dt: date) -> pd.DataFrame:
+    sql = ut.read_sql_file(sql_path / "bayview.sql")
+    sql = ut.replace_mark_with_text(
+        sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
+    df = ut.read_data_from_preston_with_string_single_statement(sql)
+    if len(df) > 1:
+        raise Exception("More than one row returned for bayview")
+    template = pd.read_csv(config.MAPPING_PATH / "bayview_template.csv")
+    template['RiskDate'], template['ValuationDate'] = [ut.date_to_str(dt)]*2
+    template[
+        'PricedSecurityName'] = f"{template['PositionId'].iloc[0]}_{ut.date_to_str(dt)}"
+    template['Amount'], template['LocalMarketValue'], template['LocalTotalMarketValue'], template['SharesOrParValue'] = [
+        df['MARKET_VALUE_ACCRUED_INTEREST_LOCAL'].iloc[0]]*4
+    template['BaseMarketValue'], template['BaseTotalMarketValue'] = [
+        df['MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV'].iloc[0]]*2
+    return template
+
+
 def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
     if type not in ["Basket_Hedge", "Illiquids", "Main", "IFT", "Fix"]:
         raise Exception(
@@ -161,7 +179,7 @@ def save_weekly_liquid_data(date) -> None:
     prefix = "Positions_"+ut.date_to_str(date)
     to_download["IFT"] = get_ift_data(date)
     to_download["Main"] = pd.concat(
-        [get_main_data(), get_all_gpf_neutralization_data(), get_interest_rate_swap_data()])
+        [get_main_data(), get_all_gpf_neutralization_data(), get_interest_rate_swap_data(), get_bayview_data(date)])
     to_download["Illiquids"] = get_illiquids_data()
     hedge = get_hedge_data()
     basket = get_basket_data()

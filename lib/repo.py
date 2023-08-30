@@ -44,20 +44,27 @@ def create_template_folder(from_date: date, to_date: date) -> None:
     update_env_file(from_date, to_date)
 
 
-def get_sql_data() -> pd.DataFrame:
+def get_sql_data(dt: date) -> pd.DataFrame:
     path = sql_path / "repo.sql"
-    return ut.read_data_from_preston_with_sql_file(path)
+    df1 = ut.read_data_from_preston_with_sql_file(path)
+    sql = ut.read_sql_file(sql_path / "repo2.sql")
+    sql = ut.replace_mark_with_text(
+        sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
+    df2 = ut.read_data_from_preston_with_string(sql)
+    df = pd.concat([df1, df2])
+    return df
 
 
-def _excel_func(wb) -> None:
+def _excel_func(wb, to_date) -> None:
     wb.sheets[0].clear_contents()
-    wb.sheets[0].range("A1").value = get_sql_data().set_index("Valuation_date")
+    wb.sheets[0].range("A1").value = get_sql_data(
+        to_date).set_index("Valuation_date")
 
 
 def update_excel_file(to_date: date) -> None:
     file_path = create_folder_path(
         base_path, to_date, False) / "REPO FINAL.xlsx"
-    ut.work_on_excel(_excel_func, file_path)
+    ut.work_on_excel(func=_excel_func, path=file_path, to_date=to_date)
 
 
 def convert_to_csv(to_date: date) -> None:
