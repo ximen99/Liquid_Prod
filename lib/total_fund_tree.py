@@ -154,7 +154,9 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
     )
     gpf_mv = (
         get_gpf_mv(to_date)
-        .set_index("SCD_SEC_ID")
+        .replace(dict.fromkeys(['EISOEOSB', 'EISOEOS', 'EISOEOSC', 'EISOEOSB1'], 'ECPCSA'))
+        .groupby('SCD_SEC_ID')[['MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV']]
+        .sum()
     )
     fx = get_fx_rate(to_date)
     with xw.App(visible=False) as app:

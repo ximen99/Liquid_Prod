@@ -13,4 +13,6 @@ new_date = from_date + timedelta(days=3)
 # check environment, if production it should return share drive path
 lib.liquid.base_path
 
-lib.repo.get_sql_data(new_date)
+df = lib.total_fund_tree.get_gpf_mv(new_date)
+
+print('')
