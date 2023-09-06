@@ -63,9 +63,10 @@ def create_lookthru_cube(from_date: date, to_date: date) -> None:
     file_prefix = "Lookthrough - Cube -  "
     old_week_str = ut.date_to_str(from_date)
     new_week_str = ut.date_to_str(to_date)
+    port_ls = ['ECOMPASS', 'EISOMAIA']
     ecompass_df = (
         pd.read_excel(path / (file_prefix + old_week_str + ".xlsx"))
-        .query("MSCI_RM_INDEX_ID.str.contains('ECOMPASS')", engine="python")
+        .query(f"MSCI_RM_INDEX_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
         .assign(
             MSCI_RM_INDEX_ID=lambda _df: _df["MSCI_RM_INDEX_ID"].str.replace(
                 old_week_str, new_week_str),
@@ -104,8 +105,9 @@ def create_LookthroughMapping(from_date: date, to_date: date) -> None:
     new_week_str = ut.date_to_str(to_date)
     old_week_df = pd.read_excel(
         path / (file_prefix + old_week_str + ".xlsx"), index_col=0)
+    port_ls = ['ECOMPASS', 'EISOMAIA']
     ecompass_df = old_week_df.query(
-        "BCI_ID.str.contains('ECOMPASS')", engine="python")
+        f"BCI_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
     new_week_df_to_append = (
         get_lookthru_data()
         .replace('', pd.NA)
