@@ -1,5 +1,6 @@
 from pathlib import Path
 from . import utils as ut
+from . import mds
 from datetime import date
 from . import config
 import pandas as pd
@@ -51,8 +52,30 @@ def get_sql_data(dt: date) -> pd.DataFrame:
     sql = ut.replace_mark_with_text(
         sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
     df2 = ut.read_data_from_preston_with_string(sql)
+    df2 = clean_data(df2, dt)
     df = pd.concat([df1, df2])
     return df
+
+
+def clean_data(df: pd.DataFrame, dt: date) -> pd.DataFrame:
+    countrypartyMap = (mds.get_counter_party_map(dt)
+                       .set_index('COUNTERPARTY_INPUT')
+                       .to_dict()
+                       ['COUNTERPARTY_OUTPUT'])
+    df['counterparty'] = df.apply(lambda r: clean_counterparty(
+        r['counterparty'], countrypartyMap), axis=1)
+    return df
+
+
+def clean_counterparty(name: str, map: dict) -> str:
+    if len(name) > 4 and name != 'BCI_Internal':
+        if name in map.keys():
+            return map[name]
+        else:
+            raise ValueError(
+                f'Counterparty "{name}" not found in mapping table')
+    else:
+        return name
 
 
 def _excel_func(wb, to_date) -> None:
