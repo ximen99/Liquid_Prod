@@ -1,7 +1,7 @@
 from pathlib import Path
 from . import utils as ut
 from . import mds
-from datetime import date
+from datetime import date, timedelta
 from . import config
 import pandas as pd
 
@@ -50,10 +50,12 @@ def get_sql_data(dt: date) -> pd.DataFrame:
     df1 = ut.read_data_from_preston_with_sql_file(path)
     sql = ut.read_sql_file(sql_path / "repo2.sql")
     sql = ut.replace_mark_with_text(
-        sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
+        sql, {"?": f"{ut.date_to_str_with_dash(dt+timedelta(days=3))}"})
     df2 = ut.read_data_from_preston_with_string(sql)
-    df2 = clean_data(df2, dt)
+    if df2.shape[0] == 0:
+        raise ValueError("No data found in database")
     df = pd.concat([df1, df2])
+    df = clean_data(df, dt)
     return df
 
 
@@ -68,14 +70,14 @@ def clean_data(df: pd.DataFrame, dt: date) -> pd.DataFrame:
 
 
 def clean_counterparty(name: str, map: dict) -> str:
-    if len(name) > 4 and name != 'BCI_Internal':
-        if name in map.keys():
-            return map[name]
-        else:
-            raise ValueError(
-                f'Counterparty "{name}" not found in mapping table')
-    else:
+    if name in map.values():
         return name
+    if name == 'BCI_Internal':
+        return 'BCI_Internal'
+    if name in map.keys():
+        return map[name]
+    raise ValueError(
+        f'Counterparty "{name}" not found in mapping table')
 
 
 def _excel_func(wb, to_date) -> None:

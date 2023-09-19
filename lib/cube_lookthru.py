@@ -63,7 +63,7 @@ def create_lookthru_cube(from_date: date, to_date: date) -> None:
     file_prefix = "Lookthrough - Cube -  "
     old_week_str = ut.date_to_str(from_date)
     new_week_str = ut.date_to_str(to_date)
-    port_ls = ['ECOMPASS', 'EISOMAIA']
+    port_ls = ['ECOMPASS', 'EISOMAIA', 'EISOBOR']
     ecompass_df = (
         pd.read_excel(path / (file_prefix + old_week_str + ".xlsx"))
         .query(f"MSCI_RM_INDEX_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
