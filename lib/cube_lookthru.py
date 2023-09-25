@@ -105,7 +105,7 @@ def create_LookthroughMapping(from_date: date, to_date: date) -> None:
     new_week_str = ut.date_to_str(to_date)
     old_week_df = pd.read_excel(
         path / (file_prefix + old_week_str + ".xlsx"), index_col=0)
-    port_ls = ['ECOMPASS', 'EISOMAIA']
+    port_ls = ['ECOMPASS', 'EISOMAIA', 'EISOBOR']
     ecompass_df = old_week_df.query(
         f"BCI_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
     new_week_df_to_append = (
