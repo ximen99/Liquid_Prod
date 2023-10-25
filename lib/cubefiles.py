@@ -45,8 +45,16 @@ def update_ProcessStats(dt: date, weekly: bool = True) -> None:
         base_path/"ProcessStats.csv", r"Weekly|Monthly", risk_version)
 
 
+def update_bmk(dt: date, path: Path):
+    for f in [path/f"Total_Fund_BMK_Tree_{ut.date_to_str(dt)} - RD.csv", path/f"Total_Fund_BMK_Tree_{ut.date_to_str(dt)} - RU.csv"]:
+        ut.replace_text_in_file(
+            f, 'S&P/LSTA U.S. Leveraged Loan 100 - CAD Hedged', 'SP.MC.UNX000000151901432@rmgBenchmarks')
+    print("updated benchmark replacement.")
+
+
 def create_template_folder(dt: date, weekly: bool = True) -> None:
     path = create_folder_path(base_path, dt, weekly, True)
     print(f"Created folder {path}")
     copy_files(dt, path)
+    update_bmk(dt, path)
     update_ProcessStats(dt, weekly)
