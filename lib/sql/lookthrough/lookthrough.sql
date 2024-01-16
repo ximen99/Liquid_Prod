@@ -27,4 +27,5 @@ AS (
 		AND O.PortfolioCode NOT IN ('E0D0125')
 )
 SELECT DISTINCT * FROM LookThrough
+WHERE INSTRUMENT_TYPE != 'Fully Funded Swap'
 ORDER BY 4,1
