@@ -1,7 +1,3 @@
-
-SET NOCOUNT ON
-DECLARE @SQL VARCHAR(MAX)
-SET @SQL = '
 use RMRepository
 drop table if exists #collapsedLegs
 ;
@@ -11,26 +7,26 @@ as
 (select PositionParentId 
  from 
  rmstg.allSource_enriched
- where ISR_streamName LIKE ''%IRS''
-and SwapLegTypeCode   = ''FLOAT_LEG''
+ where ISR_streamName LIKE '%IRS'
+and SwapLegTypeCode   = 'FLOAT_LEG'
 group by PositionParentId 
 having COUNT(*) >1)
 ,
 FltLeg AS
 (
-SELECT * , iif(SharesOrParValue >= 0 , ''Rec'', ''Pay'') PayOrRec
+SELECT * , iif(SharesOrParValue >= 0 , 'Rec', 'Pay') PayOrRec
 FROM [rmstg].[AllSource_Enriched]
-WHERE ISR_streamName LIKE ''%IRS''
-AND SwapLegTypeCode   = ''FLOAT_LEG''
+WHERE ISR_streamName LIKE '%IRS'
+AND SwapLegTypeCode   = 'FLOAT_LEG'
   and PositionParentId in (select PositionParentId   from doubleFloat)
   and SharesOrParValue >= 0
  )
 ,FixLeg as
 (
-SELECT * ,iif(SharesOrParValue >= 0 , ''Rec'', ''Pay'') PayOrRec
+SELECT * ,iif(SharesOrParValue >= 0 , 'Rec', 'Pay') PayOrRec
 FROM [rmstg].[AllSource_Enriched]
-WHERE ISR_streamName LIKE ''%IRS''
---AND SwapLegTypeCode   = ''FIXED_LEG''
+WHERE ISR_streamName LIKE '%IRS'
+--AND SwapLegTypeCode   = 'FIXED_LEG'
   and SharesOrParValue < 0
    and PositionParentId in (select PositionParentId   from doubleFloat)
  )
@@ -40,75 +36,75 @@ WHERE ISR_streamName LIKE ''%IRS''
  (
 SELECT
 
-FixLeg.SecId + ''_'' + FltLeg.SecId as  CombinedSecId,
-FixLeg.SecId + ''_'' + FltLeg.SecId CombinedPositionId,
+FixLeg.SecId + '_' + FltLeg.SecId as  CombinedSecId,
+FixLeg.SecId + '_' + FltLeg.SecId CombinedPositionId,
 FixLeg.SecIdParent CombinedPositionParentId,
-FixLeg.securityName + ''/'' + FltLeg.securityName CombinedSecurityName,
+FixLeg.securityName + '/' + FltLeg.securityName CombinedSecurityName,
 FixLeg.*,
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.ResetSpread,FltLeg.ResetSpread) as ResetSpreadPay,
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.ResetSpread,FltLeg.ResetSpread) as ResetSpreadPay,
 
 -----RM_Reference.RMFormatFrequency( 
-	iif(FixLeg.PayOrRec = ''Pay'', FltLeg.couponFrequencyCode , FixLeg.couponFrequencyCode) --) 
+	iif(FixLeg.PayOrRec = 'Pay', FltLeg.couponFrequencyCode , FixLeg.couponFrequencyCode) --) 
 		as  CouponFrequencyRec,
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.CouponRate ,FltLeg.CouponRate) as CouponRatePay,
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.CouponRate,FixLeg.CouponRate) as CouponRateRec,
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.CouponRate ,FltLeg.CouponRate) as CouponRatePay,
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.CouponRate,FixLeg.CouponRate) as CouponRateRec,
 -----RM_Reference.RMFormatDaycount( 
-	iif(FixLeg.PayOrRec = ''Pay'',    FltLeg.DayCountBasis,FixLeg.DayCountBasis) --)  
+	iif(FixLeg.PayOrRec = 'Pay',    FltLeg.DayCountBasis,FixLeg.DayCountBasis) --)  
 		as DayCountBasisRec,
 -----RM_Reference.RMFormatCurve( 
-	iif(FixLeg.PayOrRec = ''Pay'',  FltLeg.referenceCurve , FixLeg.referenceCurve) --) 
+	iif(FixLeg.PayOrRec = 'Pay',  FltLeg.referenceCurve , FixLeg.referenceCurve) --) 
 		as ReferenceRateCurveRec,
 
-CASE iif(FixLeg.PayOrRec = ''Pay'',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
+CASE iif(FixLeg.PayOrRec = 'Pay',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
 WHEN 
-	''1D'' THEN ''daily'' WHEN ''1M'' THEN ''monthly'' WHEN ''2M'' THEN ''bimonthly'' WHEN ''3M'' THEN ''quarterly'' WHEN NULL THEN ''''
-   ELSE iif(FixLeg.PayOrRec = ''Pay'',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
+	'1D' THEN 'daily' WHEN '1M' THEN 'monthly' WHEN '2M' THEN 'bimonthly' WHEN '3M' THEN 'quarterly' WHEN NULL THEN ''
+   ELSE iif(FixLeg.PayOrRec = 'Pay',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
 END  as ReferenceRateTermRec,
 
 ---RM_Reference.RMFormatFrequency( 
-	iif(FixLeg.PayOrRec = ''Pay'', FltLeg.ResetFrequency,   FixLeg.ResetFrequency) --) 
+	iif(FixLeg.PayOrRec = 'Pay', FltLeg.ResetFrequency,   FixLeg.ResetFrequency) --) 
 		as  ResetRateFrequencyRec,
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.ResetSpread, FixLeg.ResetSpread)  as ResetSpreadRec,
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.LocalTotalMarketValue, FixLeg.LocalTotalMarketValue)  as LocalTotalMarketValueRec,
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.[BaseTotalMarketValue],FixLeg.[BaseTotalMarketValue]) as BaseTotalMarketValueRec,
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.ResetSpread, FixLeg.ResetSpread)  as ResetSpreadRec,
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.LocalTotalMarketValue, FixLeg.LocalTotalMarketValue)  as LocalTotalMarketValueRec,
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.[BaseTotalMarketValue],FixLeg.[BaseTotalMarketValue]) as BaseTotalMarketValueRec,
 ----RM_Reference.RMFormatFrequency( 
-	iif(FixLeg.PayOrRec = ''Rec'', FltLeg.couponFrequencyCode , FixLeg.couponFrequencyCode) --) 
+	iif(FixLeg.PayOrRec = 'Rec', FltLeg.couponFrequencyCode , FixLeg.couponFrequencyCode) --) 
 		as  CouponFrequencyPay,
 ----RM_Reference.RMFormatDaycount( 
-	iif(FixLeg.PayOrRec = ''Rec'',    FltLeg.DayCountBasis,FixLeg.DayCountBasis) --)  
+	iif(FixLeg.PayOrRec = 'Rec',    FltLeg.DayCountBasis,FixLeg.DayCountBasis) --)  
 	as DayCountBasisPay,
 ---RM_Reference.RMFormatCurve(
-	iif(FixLeg.PayOrRec = ''Rec'',   FltLeg.referenceCurve , FixLeg.referenceCurve)--)  
+	iif(FixLeg.PayOrRec = 'Rec',   FltLeg.referenceCurve , FixLeg.referenceCurve)--)  
 	as ReferenceRateCurvePay,
-CASE iif(FixLeg.PayOrRec = ''Rec'',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
+CASE iif(FixLeg.PayOrRec = 'Rec',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
 WHEN 
-	''1D'' THEN ''daily'' WHEN ''1M'' THEN ''monthly'' WHEN ''2M'' THEN ''bimonthly'' WHEN ''3M'' THEN ''quarterly'' WHEN NULL THEN ''''
-	ELSE iif(FixLeg.PayOrRec = ''Rec'',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
+	'1D' THEN 'daily' WHEN '1M' THEN 'monthly' WHEN '2M' THEN 'bimonthly' WHEN '3M' THEN 'quarterly' WHEN NULL THEN ''
+	ELSE iif(FixLeg.PayOrRec = 'Rec',    FltLeg.ReferenceRateTerm , FixLeg.ReferenceRateTerm)
 END  as ReferenceRateTermPay,
 
 ----RM_Reference.RMFormatFrequency( 
-	iif(FixLeg.PayOrRec = ''Rec'', FltLeg.ResetFrequency,   FixLeg.ResetFrequency)--) 
+	iif(FixLeg.PayOrRec = 'Rec', FltLeg.ResetFrequency,   FixLeg.ResetFrequency)--) 
 	as  ResetRateFrequencyPay,
 
-iif(FixLeg.PayOrRec = ''Rec'',   FltLeg.LocalTotalMarketValue, FixLeg.LocalTotalMarketValue)  as LocalTotalMarketValuePay,
-iif(FixLeg.PayOrRec = ''Rec'',   FltLeg.[BaseTotalMarketValue],FixLeg.[BaseTotalMarketValue]) as BaseTotalMarketValuePay,
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.Currency,FltLeg.Currency) AS CurrencyCodePay,
-iif(FixLeg.PayOrRec = ''Rec'',   FixLeg.Currency,FltLeg.Currency) AS CurrencyCodeRec,
+iif(FixLeg.PayOrRec = 'Rec',   FltLeg.LocalTotalMarketValue, FixLeg.LocalTotalMarketValue)  as LocalTotalMarketValuePay,
+iif(FixLeg.PayOrRec = 'Rec',   FltLeg.[BaseTotalMarketValue],FixLeg.[BaseTotalMarketValue]) as BaseTotalMarketValuePay,
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.Currency,FltLeg.Currency) AS CurrencyCodePay,
+iif(FixLeg.PayOrRec = 'Rec',   FixLeg.Currency,FltLeg.Currency) AS CurrencyCodeRec,
 
  
 
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.SharesOrParValue,FltLeg.SharesOrParValue) AS PayNotional,     
-iif(FixLeg.PayOrRec = ''Rec'',   FixLeg.SharesOrParValue,FltLeg.SharesOrParValue)  AS RecNotional,
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.SharesOrParValue,FltLeg.SharesOrParValue) AS PayNotional,     
+iif(FixLeg.PayOrRec = 'Rec',   FixLeg.SharesOrParValue,FltLeg.SharesOrParValue)  AS RecNotional,
 
  
 
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.PurchaseDate, FltLeg.PurchaseDate) as PurchaseDatePay,    
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.PurchaseDate,FixLeg.PurchaseDate) as PurchaseDateRec,    
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.PurchaseDate, FltLeg.PurchaseDate) as PurchaseDatePay,    
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.PurchaseDate,FixLeg.PurchaseDate) as PurchaseDateRec,    
 
  
 
-iif(FixLeg.PayOrRec = ''Pay'',   FixLeg.SwapLegTypeCode, FltLeg.SwapLegTypeCode) as SwapLegTypeCodePay,  
-iif(FixLeg.PayOrRec = ''Pay'',   FltLeg.SwapLegTypeCode, FixLeg.SwapLegTypeCode) as SwapLegTypeCodeRec,
+iif(FixLeg.PayOrRec = 'Pay',   FixLeg.SwapLegTypeCode, FltLeg.SwapLegTypeCode) as SwapLegTypeCodePay,  
+iif(FixLeg.PayOrRec = 'Pay',   FltLeg.SwapLegTypeCode, FixLeg.SwapLegTypeCode) as SwapLegTypeCodeRec,
 
  ((FixLeg.DirtyValueTotalQC + FltLeg.DirtyValueTotalQC) / nullif(FltLeg.SharesOrParValue,0)) AS LocalMarketPrice_Override            -- CM 20191203
 
@@ -119,7 +115,7 @@ JOIN  FltLeg    /* Rec Leg */
     ON   (    FixLeg.SecIdParent = FltLeg.SecIdParent   )
 WHERE 
 FixLeg.ISR_streamName = FltLeg.ISR_streamName            
-AND FixLeg.ISR_streamName LIKE ''%IRS''
+AND FixLeg.ISR_streamName LIKE '%IRS'
 )
 
 select * into #collapsedLegs
@@ -478,14 +474,14 @@ update
 #allSourceModelled
 
 SET ModelRuleOverride
-    =(case when (InstrumentTypeCode = ''IR_VANILLA_SWP'' and SwapLegTypeCodePay  = ''FIXED_LEG'') then         ''RSM_InterestRateSwap_ReceiveFloatPayFixed''
-                     when (InstrumentTypeCode = ''IR_CROSS_CRNCY_SWP'' and SwapLegTypeCodePay  = ''FIXED_LEG'') then ''RSM_CrossCurrencyReceiveFloatPayFixed''
-                     when  (InstrumentTypeCode = ''IR_CROSS_CRNCY_SWP'' and SwapLegTypeCodeRec  = ''FIXED_LEG'') then ''RSM_CrossCurrencyPayFloatReceiveFixed''
-                     when (InstrumentTypeCode = ''IR_OVERNIGHT_IDX_SWP'' and SwapLegTypeCodePay  = ''FIXED_LEG'') then ''OISM_ReceiveFloatPayFixed''
-                     when  (InstrumentTypeCode = ''IR_OVERNIGHT_IDX_SWP'' and SwapLegTypeCodeRec  = ''FIXED_LEG'') then ''OISM_PayFloatReceiveFixed''
-                     else ''RSM_InterestRateSwap_PayFloatReceiveFixed''       
+    =(case when (InstrumentTypeCode = 'IR_VANILLA_SWP' and SwapLegTypeCodePay  = 'FIXED_LEG') then         'RSM_InterestRateSwap_ReceiveFloatPayFixed'
+                     when (InstrumentTypeCode = 'IR_CROSS_CRNCY_SWP' and SwapLegTypeCodePay  = 'FIXED_LEG') then 'RSM_CrossCurrencyReceiveFloatPayFixed'
+                     when  (InstrumentTypeCode = 'IR_CROSS_CRNCY_SWP' and SwapLegTypeCodeRec  = 'FIXED_LEG') then 'RSM_CrossCurrencyPayFloatReceiveFixed'
+                     when (InstrumentTypeCode = 'IR_OVERNIGHT_IDX_SWP' and SwapLegTypeCodePay  = 'FIXED_LEG') then 'OISM_ReceiveFloatPayFixed'
+                     when  (InstrumentTypeCode = 'IR_OVERNIGHT_IDX_SWP' and SwapLegTypeCodeRec  = 'FIXED_LEG') then 'OISM_PayFloatReceiveFixed'
+                     else 'RSM_InterestRateSwap_PayFloatReceiveFixed'       
                      end)
-       where ISR_streamName in (''SCD_IRS'') ;  
+       where ISR_streamName in ('SCD_IRS') ;  
 
 
 
@@ -493,19 +489,19 @@ UPDATE
 #allSourceModelled
  
  SET LocalTotalMarketValue = LocalTotalMarketValuePay + LocalTotalMarketValueRec
-	where ISR_streamName in (''SCD_IRS'', ''SCD_FXFWD'') ;  
+	where ISR_streamName in ('SCD_IRS', 'SCD_FXFWD') ;  
 
 	UPDATE 
 #allSourceModelled
  
  SET BaseTotalMarketValue  = BaseTotalMarketValuePay  + BaseTotalMarketValueRec
-	where ISR_streamName in (''SCD_IRS'', ''SCD_FXFWD'') ; 
+	where ISR_streamName in ('SCD_IRS', 'SCD_FXFWD') ; 
 
 	UPDATE 
 #allSourceModelled
  
  SET LocalTotalMarketValue = LocalTotalMarketValuePay + LocalTotalMarketValueRec
-	where ISR_streamName in (''SCD_IRS'', ''SCD_FXFWD'') ;  
+	where ISR_streamName in ('SCD_IRS', 'SCD_FXFWD') ;  
 
 
 	
@@ -515,7 +511,7 @@ UPDATE
  SET Amount
     = (case when RecNotional > 0 then RecNotional
 			else PayNotional end)
-	where InstrumentTypeCode in (''IR_VANILLA_SWP'', ''IR_OVERNIGHT_IDX_SWP'')  ; 
+	where InstrumentTypeCode in ('IR_VANILLA_SWP', 'IR_OVERNIGHT_IDX_SWP')  ; 
 
 --	select * from #allSourceModelled
 
@@ -526,97 +522,97 @@ UPDATE
 --select CouponFrequencyPay,CouponFrequencyRec,ReferenceFrequency,ResetRateFrequencyPay,ResetRateFrequencyRec from #allSourceModelled
 
 update #allSourceModelled
-set CouponFrequencyPay = CASE isnull(CouponFrequencyPay, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+set CouponFrequencyPay = CASE isnull(CouponFrequencyPay, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( CouponFrequencyPay in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , CouponFrequencyPay, ''UNK'')
+    ELSE iif( CouponFrequencyPay in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , CouponFrequencyPay, 'UNK')
 END,
-CouponFrequencyRec = CASE isnull(CouponFrequencyRec, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+CouponFrequencyRec = CASE isnull(CouponFrequencyRec, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( CouponFrequencyRec in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , CouponFrequencyRec, ''UNK'')
+    ELSE iif( CouponFrequencyRec in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , CouponFrequencyRec, 'UNK')
 END,
-ResetRateFrequencyPay = CASE isnull(ResetRateFrequencyPay, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+ResetRateFrequencyPay = CASE isnull(ResetRateFrequencyPay, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( ResetRateFrequencyPay in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , ResetRateFrequencyPay, ''UNK'')
+    ELSE iif( ResetRateFrequencyPay in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , ResetRateFrequencyPay, 'UNK')
 END,
-ResetRateFrequencyRec= CASE isnull(ResetRateFrequencyRec, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+ResetRateFrequencyRec= CASE isnull(ResetRateFrequencyRec, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( ResetRateFrequencyRec in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , ResetRateFrequencyRec, ''UNK'')
+    ELSE iif( ResetRateFrequencyRec in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , ResetRateFrequencyRec, 'UNK')
 END
 
 
@@ -628,26 +624,26 @@ update #allSourceModelled
 set 
 DayCountBasisPay =
 CASE DayCountBasisPay
-WHEN ''30/360'' THEN ''dayCount_30_360''
-WHEN ''30/365'' THEN ''dayCount_30_365''
-WHEN  ''ACT/360'' THEN ''dayCount_Act_360''
-WHEN  ''ACT/ACT'' THEN ''dayCount_Act_Act''
-WHEN  ''ACT/365'' THEN ''dayCount_Act_365''
-WHEN  ''30E/360'' THEN ''dayCount_30E_360''
-WHEN  ''ACT/ACT_ISMA'' THEN ''dayCount_Act_Act''
+WHEN '30/360' THEN 'dayCount_30_360'
+WHEN '30/365' THEN 'dayCount_30_365'
+WHEN  'ACT/360' THEN 'dayCount_Act_360'
+WHEN  'ACT/ACT' THEN 'dayCount_Act_Act'
+WHEN  'ACT/365' THEN 'dayCount_Act_365'
+WHEN  '30E/360' THEN 'dayCount_30E_360'
+WHEN  'ACT/ACT_ISMA' THEN 'dayCount_Act_Act'
 ELSE DayCountBasisPay
 END
 
 ,
 DayCountBasisRec =
 CASE DayCountBasisRec
-WHEN ''30/360'' THEN ''dayCount_30_360''
-WHEN ''30/365'' THEN ''dayCount_30_365''
-WHEN  ''ACT/360'' THEN ''dayCount_Act_360''
-WHEN  ''ACT/ACT'' THEN ''dayCount_Act_Act''
-WHEN  ''ACT/365'' THEN ''dayCount_Act_365''
-WHEN  ''30E/360'' THEN ''dayCount_30E_360''
-WHEN  ''ACT/ACT_ISMA'' THEN ''dayCount_Act_Act''
+WHEN '30/360' THEN 'dayCount_30_360'
+WHEN '30/365' THEN 'dayCount_30_365'
+WHEN  'ACT/360' THEN 'dayCount_Act_360'
+WHEN  'ACT/ACT' THEN 'dayCount_Act_Act'
+WHEN  'ACT/365' THEN 'dayCount_Act_365'
+WHEN  '30E/360' THEN 'dayCount_30E_360'
+WHEN  'ACT/ACT_ISMA' THEN 'dayCount_Act_Act'
 ELSE DayCountBasisRec
 END
 
@@ -657,22 +653,22 @@ END
 update #allSourceModelled
 set ReferenceRateCurvePay
  =
-    CASE		 WHEN ReferenceRateCurvePay IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''
-				 WHEN ReferenceRateCurvePay = ''CAD Swap'' and ReferenceRateTermPay=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+    CASE		 WHEN ReferenceRateCurvePay IN ('USD LIBOR', 'USLIBOR') THEN 'USD Swap - LIBOR'
+				 WHEN ReferenceRateCurvePay = 'CAD Swap' and ReferenceRateTermPay='daily' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
 						
-			 WHEN ReferenceRateCurvePay = ''CDOR'' THEN ''CAD Swap''
-			 WHEN ReferenceRateCurvePay = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
-			 WHEN ReferenceRateCurvePay IS NULL THEN ''''
+			 WHEN ReferenceRateCurvePay = 'CDOR' THEN 'CAD Swap'
+			 WHEN ReferenceRateCurvePay = 'CORRA' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
+			 WHEN ReferenceRateCurvePay IS NULL THEN ''
 			 ELSE ReferenceRateCurvePay
     END
 	,
 	ReferenceRateCurveRec =
-    CASE		 WHEN ReferenceRateCurveRec IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
-					 WHEN ReferenceRateCurveRec = ''CAD Swap'' and ReferenceRateTermRec=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+    CASE		 WHEN ReferenceRateCurveRec IN ('USD LIBOR', 'USLIBOR') THEN 'USD Swap - LIBOR'		
+					 WHEN ReferenceRateCurveRec = 'CAD Swap' and ReferenceRateTermRec='daily' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
 				
-			 WHEN ReferenceRateCurveRec = ''CDOR'' THEN ''CAD Swap''
-			 WHEN ReferenceRateCurveRec = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
-			 WHEN ReferenceRateCurveRec IS NULL THEN ''''
+			 WHEN ReferenceRateCurveRec = 'CDOR' THEN 'CAD Swap'
+			 WHEN ReferenceRateCurveRec = 'CORRA' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
+			 WHEN ReferenceRateCurveRec IS NULL THEN ''
 			 ELSE ReferenceRateCurveRec
     END
 
@@ -682,7 +678,7 @@ set ReferenceRateCurvePay
 
 
 --Derive best Exchange traded Id for model
--- This will recognize any override id''s previously applied
+-- This will recognize any override id's previously applied
 
 UPDATE
 #allSourceModelled
@@ -735,17 +731,17 @@ UPDATE
 WHEN isnull(Amount ,0) = 0  THEN NULL   -- shirley fixed 2019/12/04
 
 ELSE 
-(CASE WHEN  ISNULL( modelRuleOverride, ModelRuleDefault   ) in (''RSM_InterestRateSwap_ReceiveFloatPayFixed'', ''RSM_InterestRateSwap_PayFloatReceiveFixed'') 
+(CASE WHEN  ISNULL( modelRuleOverride, ModelRuleDefault   ) in ('RSM_InterestRateSwap_ReceiveFloatPayFixed', 'RSM_InterestRateSwap_PayFloatReceiveFixed') 
 			THEN (LocalTotalMarketValue  /nullif( Amount,0))
-      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in (''RSM_CrossCurrencyReceiveFloatPayFixed'', ''RSM_CrossCurrencyPayFloatReceiveFixed'') 
+      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in ('RSM_CrossCurrencyReceiveFloatPayFixed', 'RSM_CrossCurrencyPayFloatReceiveFixed') 
 			THEN LocalTotalMarketValue 
-      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in (''OISM_OISReceiveFloatPayFixed'', ''OISM_OISPayFloatReceiveFixed'',''OISM_ReceiveFloatPayFixed'', ''OISM_PayFloatReceiveFixed'') 
+      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in ('OISM_OISReceiveFloatPayFixed', 'OISM_OISPayFloatReceiveFixed','OISM_ReceiveFloatPayFixed', 'OISM_PayFloatReceiveFixed') 
 			THEN ((LocalTotalMarketValue *100) / nullif(Amount,0) )
-      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in (''GSM_MortgageBackedSecurity'', ''GBM_AssetBackSecurity'')
+      WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) in ('GSM_MortgageBackedSecurity', 'GBM_AssetBackSecurity')
 			THEN (LocalTotalMarketValue  /nullif( Amount,0) )
-	  WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) IN (''ETM_Loan'',''BLM_BankLoanProxy'') AND ISR_streamName NOT IN (''Ares'', ''SCD_Minke'', ''SCD_Beluga'')
+	  WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) IN ('ETM_Loan','BLM_BankLoanProxy') AND ISR_streamName NOT IN ('Ares', 'SCD_Minke', 'SCD_Beluga')
 			THEN ((LocalTotalMarketValue + ISNULL(LocalAccruedInterestNative,0)) * 100 / nullif( Amount,0))
-	  WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) IN (''ETM_Loan'',''BLM_BankLoanProxy'') AND ISR_streamName IN (''Ares'', ''SCD_Minke'', ''SCD_Beluga'')
+	  WHEN ISNULL( modelRuleOverride, ModelRuleDefault   ) IN ('ETM_Loan','BLM_BankLoanProxy') AND ISR_streamName IN ('Ares', 'SCD_Minke', 'SCD_Beluga')
 			THEN ((LocalTotalMarketValue) * 100 / nullif( Amount,0))
       ELSE
 			abs((LocalTotalMarketValue / nullif( Amount,0)))*100
@@ -753,7 +749,7 @@ ELSE
 
 END
 
- WHERE ISR_streamName NOT IN (''Cowen'', ''EOS'')  ;
+ WHERE ISR_streamName NOT IN ('Cowen', 'EOS')  ;
 
 
  ------------------
@@ -762,15 +758,15 @@ END
 UPDATE
  #allSourceModelled
  SET  referenceCurve =  
-    CASE		 WHEN referenceCurve IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
-				 WHEN referenceCurve = ''CDOR'' and ReferenceRateTerm=''1D''  THEN ''CAD CORRA OIS (SP)''
+    CASE		 WHEN referenceCurve IN ('USD LIBOR', 'USLIBOR') THEN 'USD Swap - LIBOR'		
+				 WHEN referenceCurve = 'CDOR' and ReferenceRateTerm='1D'  THEN 'CAD CORRA OIS (SP)'
 				
-			 WHEN referenceCurve = ''CDOR'' THEN ''CAD Swap''
-			 WHEN referenceCurve = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
-			 WHEN referenceCurve IS NULL THEN ''''
+			 WHEN referenceCurve = 'CDOR' THEN 'CAD Swap'
+			 WHEN referenceCurve = 'CORRA' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
+			 WHEN referenceCurve IS NULL THEN ''
 			 ELSE referenceCurve
     END 
- WHERE referenceCurve <> ''US Prime Rate'';		-- Don''t overwrite cases of Prime rate set in Antares view
+ WHERE referenceCurve <> 'US Prime Rate';		-- Don't overwrite cases of Prime rate set in Antares view
 
  --DayCountBasis  (function will pass through already formated dayCount values)
  
@@ -779,13 +775,13 @@ UPDATE
  SET  #allSourceModelled.DayCountBasis =  
   
 CASE DayCountBasis
-WHEN ''30/360'' THEN ''dayCount_30_360''
-WHEN ''30/365'' THEN ''dayCount_30_365''
-WHEN  ''ACT/360'' THEN ''dayCount_Act_360''
-WHEN  ''ACT/ACT'' THEN ''dayCount_Act_Act''
-WHEN  ''ACT/365'' THEN ''dayCount_Act_365''
-WHEN  ''30E/360'' THEN ''dayCount_30E_360''
-WHEN  ''ACT/ACT_ISMA'' THEN ''dayCount_Act_Act''
+WHEN '30/360' THEN 'dayCount_30_360'
+WHEN '30/365' THEN 'dayCount_30_365'
+WHEN  'ACT/360' THEN 'dayCount_Act_360'
+WHEN  'ACT/ACT' THEN 'dayCount_Act_Act'
+WHEN  'ACT/365' THEN 'dayCount_Act_365'
+WHEN  '30E/360' THEN 'dayCount_30E_360'
+WHEN  'ACT/ACT_ISMA' THEN 'dayCount_Act_Act'
 ELSE DayCountBasis
 END
 
@@ -794,8 +790,8 @@ UPDATE
  SET RisklessCurve =  
  CASE 
     WHEN LocalPriceCcyCode IS NULL THEN NULL
-	WHEN LocalPriceCcyCode IN (''ARS'',''BRL'',''CLP'',''CNH'',''CNY'',''COP'',''EGP'',''IDR'',''ILS'',''LKR'',''NGN'',''PEN'',''RON'',''RUB'',''TRY'',''UYU'') THEN LocalPriceCcyCode + '' Govt (NS)''
-    ELSE LocalPriceCcyCode + '' Govt'' END
+	WHEN LocalPriceCcyCode IN ('ARS','BRL','CLP','CNH','CNY','COP','EGP','IDR','ILS','LKR','NGN','PEN','RON','RUB','TRY','UYU') THEN LocalPriceCcyCode + ' Govt (NS)'
+    ELSE LocalPriceCcyCode + ' Govt' END
 
 
 UPDATE 
@@ -804,146 +800,146 @@ UPDATE
 CASE WHEN Duration  IS null
 THEN null
 
-ELSE CAST(round(Duration,0) AS varchar(50))+''Y'' 
+ELSE CAST(round(Duration,0) AS varchar(50))+'Y' 
 END 
  
  
 UPDATE 
  #allSourceModelled
  SET  couponFrequencyCode = 
- CASE isnull(couponFrequencyCode, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+ CASE isnull(couponFrequencyCode, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( couponFrequencyCode in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , couponFrequencyCode, ''UNK'')
+    ELSE iif( couponFrequencyCode in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , couponFrequencyCode, 'UNK')
 	END;
 
 UPDATE #allSourceModelled
-SET CompoundingFrequencyCode = CASE isnull(CompoundingFrequencyCode, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+SET CompoundingFrequencyCode = CASE isnull(CompoundingFrequencyCode, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( CompoundingFrequencyCode in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , CompoundingFrequencyCode, ''UNK'')
+    ELSE iif( CompoundingFrequencyCode in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , CompoundingFrequencyCode, 'UNK')
 	END;
 
 
 UPDATE #allSourceModelled
-SET ResetFrequency = CASE isnull(ResetFrequency, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+SET ResetFrequency = CASE isnull(ResetFrequency, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( ResetFrequency in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , ResetFrequency, ''UNK'')
+    ELSE iif( ResetFrequency in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , ResetFrequency, 'UNK')
 	END;
 
 UPDATE #allSourceModelled
-SET ReferenceFrequency = CASE isnull(ReferenceFrequency, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+SET ReferenceFrequency = CASE isnull(ReferenceFrequency, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( ReferenceFrequency in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , ReferenceFrequency, ''UNK'')
+    ELSE iif( ReferenceFrequency in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , ReferenceFrequency, 'UNK')
 	END;
 
 UPDATE #allSourceModelled
-SET ReferenceRateTermRec = CASE isnull(ReferenceRateTermRec, ''NULL'')
-    WHEN ''A'' THEN ''annual''
-    WHEN ''S'' THEN ''semiannual''	
-    WHEN ''Q'' THEN ''quarterly'' 
-    WHEN ''M'' THEN ''monthly''  
+SET ReferenceRateTermRec = CASE isnull(ReferenceRateTermRec, 'NULL')
+    WHEN 'A' THEN 'annual'
+    WHEN 'S' THEN 'semiannual'	
+    WHEN 'Q' THEN 'quarterly' 
+    WHEN 'M' THEN 'monthly'  
 
-	WHEN ''1M'' THEN ''monthly''
-	WHEN ''1Y'' THEN ''annual''
-	WHEN ''2M'' THEN ''bimonthly''
-	WHEN ''3M'' THEN ''quarterly''
-	WHEN ''4M'' THEN ''four-monthly''
-	WHEN ''6M'' THEN ''semiannual''
+	WHEN '1M' THEN 'monthly'
+	WHEN '1Y' THEN 'annual'
+	WHEN '2M' THEN 'bimonthly'
+	WHEN '3M' THEN 'quarterly'
+	WHEN '4M' THEN 'four-monthly'
+	WHEN '6M' THEN 'semiannual'
 
 	-- For Ares, which gives the number of payments per year, rather than the frequency
-	WHEN ''1''  THEN ''annual''
-	WHEN ''2''  THEN ''semiannual''
-	WHEN ''4''  THEN ''quarterly''
-	WHEN ''6''  THEN ''bimonthly''
-	WHEN ''12'' THEN ''monthly''
-	WHEN ''52'' THEN ''weekly''
+	WHEN '1'  THEN 'annual'
+	WHEN '2'  THEN 'semiannual'
+	WHEN '4'  THEN 'quarterly'
+	WHEN '6'  THEN 'bimonthly'
+	WHEN '12' THEN 'monthly'
+	WHEN '52' THEN 'weekly'
 
-    ELSE iif( ReferenceRateTermRec in ( ''annual'',''semiannual'' , ''quarterly'' , ''bimonthly'', ''monthly'' , ''weekly'', ''daily'', ''UNK'' ) , ReferenceRateTermRec, ''UNK'')
+    ELSE iif( ReferenceRateTermRec in ( 'annual','semiannual' , 'quarterly' , 'bimonthly', 'monthly' , 'weekly', 'daily', 'UNK' ) , ReferenceRateTermRec, 'UNK')
 	END;
 
 
 UPDATE #allSourceModelled
 SET ReferenceRateTerm = CASE ReferenceRateTerm
-WHEN ''1D'' THEN ''daily''
-WHEN ''1M'' THEN ''monthly''
-WHEN ''2M'' THEN ''bimonthly''
-WHEN ''3M'' THEN ''quarterly''
-WHEN NULL THEN ''''
+WHEN '1D' THEN 'daily'
+WHEN '1M' THEN 'monthly'
+WHEN '2M' THEN 'bimonthly'
+WHEN '3M' THEN 'quarterly'
+WHEN NULL THEN ''
 ELSE ReferenceRateTerm
 END;
 
@@ -958,8 +954,8 @@ UPDATE
  #allSourceModelled
 
  SET BCIGicsSector
-    = (case when isnull(ModelRuleOverride,ModelRuleDefault) = ''CASH'' then ''Cash''
-                     when isnull(ModelRuleOverride,ModelRuleDefault) like (''%Repo%'') then ''Repo''
+    = (case when isnull(ModelRuleOverride,ModelRuleDefault) = 'CASH' then 'Cash'
+                     when isnull(ModelRuleOverride,ModelRuleDefault) like ('%Repo%') then 'Repo'
                      Else BCIGicsSector
               End); 
 
@@ -967,7 +963,7 @@ UPDATE
  #allSourceModelled
  
  SET BaseTotalMarketValue = BaseTotalMarketValuePay + BaseTotalMarketValueRec
-	where ISR_streamName in (''SCD_IRS'', ''SCD_FXFWD'',''SCD_CDS'')  ; 
+	where ISR_streamName in ('SCD_IRS', 'SCD_FXFWD','SCD_CDS')  ; 
 
 
 
@@ -1003,12 +999,12 @@ update #allSourceModelled
 update #allSourceModelled
 
  SET BCIGicsSector
-    = (CASE WHEN InstrumentTypeCode LIKE ''%CASH%''  
-			  THEN ''Cash'' 
-         WHEN InstrumentTypeCode LIKE ''%PROV%'' OR InstrumentTypeCode LIKE ''%SOVN%'' OR InstrumentTypeCode LIKE ''%MUNI%'' 
-              THEN ''Government Debt'' 
-         WHEN InstrumentTypeCode IN (''SHORT_TERM_REPO'', ''SELL_BUY_BACK'', ''BUY_SELL_BACK'') 
-              THEN ''Repo'' 
+    = (CASE WHEN InstrumentTypeCode LIKE '%CASH%'  
+			  THEN 'Cash' 
+         WHEN InstrumentTypeCode LIKE '%PROV%' OR InstrumentTypeCode LIKE '%SOVN%' OR InstrumentTypeCode LIKE '%MUNI%' 
+              THEN 'Government Debt' 
+         WHEN InstrumentTypeCode IN ('SHORT_TERM_REPO', 'SELL_BUY_BACK', 'BUY_SELL_BACK') 
+              THEN 'Repo' 
          ELSE BCIGicsSector  
 		 END); 
 
@@ -1026,10 +1022,10 @@ PricedSecurityName is driven off PositionId
 
 UPDATE #allSourceModelled
 SET PositionId =
-		iif(PositionId LIKE (ParentPortfolioCode + ''%''),'''',ParentPortfolioCode + ''_'') 
+		iif(PositionId LIKE (ParentPortfolioCode + '%'),'',ParentPortfolioCode + '_') 
 	+ PositionId 
 	
-WHERE ISR_StreamName NOT LIKE ''%EBSCONST'' and ISR_StreamName NOT LIKE ''%ESSCONST'' AND ISR_streamName NOT LIKE ''%Beluga%'' AND ISR_streamName NOT LIKE ''%Minke%''/* AND ISR_streamName NOT LIKE ''%ICBCPP%''*/;
+WHERE ISR_StreamName NOT LIKE '%EBSCONST' and ISR_StreamName NOT LIKE '%ESSCONST' AND ISR_streamName NOT LIKE '%Beluga%' AND ISR_streamName NOT LIKE '%Minke%'/* AND ISR_streamName NOT LIKE '%ICBCPP%'*/;
 
 /*  apend _1 , _2 etc to positionId if it has more than one instance */
 
@@ -1041,7 +1037,7 @@ WHERE RowChecksum >1
 )
 
 UPDATE #allSourceModelled
-SET PositionId =PositionId +  ''_'' + cast(Rowchecksum AS varchar(3) )  
+SET PositionId =PositionId +  '_' + cast(Rowchecksum AS varchar(3) )  
 WHERE PositionId  IN (SELECT PositionId FROM DupPos); 
 
 -- Set RiskDate for all streams to match the AnalysisDate from the RuntimeParams MDS table
@@ -1053,7 +1049,7 @@ SET RiskDate = (SELECT CAST(RiskDateKey AS NVARCHAR(100)) FROM rmstg.CurrentDate
 --Set PricedSecurityName
 UPDATE  #allSourceModelled
 SET 
-PricedSecurityName = PositionId + ''_'' + convert(varchar(8), RiskDate,112 )
+PricedSecurityName = PositionId + '_' + convert(varchar(8), RiskDate,112 )
 
 
 
@@ -1061,9 +1057,9 @@ PricedSecurityName = PositionId + ''_'' + convert(varchar(8), RiskDate,112 )
 --Set HoldingGroupName 
 UPDATE  #allSourceModelled 
 SET  HoldingGroupName  =
-CASE WHEN ISR_StreamName LIKE ''%EBSCONST'' THEN ConstituentHoldingGroupName		 
-	 WHEN ISR_StreamName LIKE ''%ESSCONST'' THEN ConstituentHoldingGroupName
-	 WHEN ISR_streamName LIKE ''External'' THEN PortfolioName			-- NOTE: Confirm.
+CASE WHEN ISR_StreamName LIKE '%EBSCONST' THEN ConstituentHoldingGroupName		 
+	 WHEN ISR_StreamName LIKE '%ESSCONST' THEN ConstituentHoldingGroupName
+	 WHEN ISR_streamName LIKE 'External' THEN PortfolioName			-- NOTE: Confirm.
 	 ELSE  ParentPortfolioCode
 	 END;
 	
@@ -1076,37 +1072,37 @@ UPDATE
 ;
 
 UPDATE #allSourceModelled
-SET ExcludeOverride = ''Y'' 
+SET ExcludeOverride = 'Y' 
 WHERE 
 
-ISR_streamName not like ''%CONST%''
-AND ISR_streamName not like ''%EOS%''
-AND ISR_Streamname NOT LIKE ''%FUT%''
-AND ISR_StreamName NOT LIKE ''%ICBC%''		-- CM: Included to match manual process.
-AND instrumentGroupCode NOT in(''FUT'', ''FWD'' )  -- Allow zero MV derivatives 
-AND NOT (instrumentGroupCode = ''OPT'' AND MaturityDate > RiskDate)	--Exclude zero MV options if they at/after maturity date
-AND NOT (instrumentGroupCode = ''SWAP'' AND coalesce(ExpiryDate	, MaturityDate) > RiskDate) --Exclude zero MV swaps if they are at/after maturity date
+ISR_streamName not like '%CONST%'
+AND ISR_streamName not like '%EOS%'
+AND ISR_Streamname NOT LIKE '%FUT%'
+AND ISR_StreamName NOT LIKE '%ICBC%'		-- CM: Included to match manual process.
+AND instrumentGroupCode NOT in('FUT', 'FWD' )  -- Allow zero MV derivatives 
+AND NOT (instrumentGroupCode = 'OPT' AND MaturityDate > RiskDate)	--Exclude zero MV options if they at/after maturity date
+AND NOT (instrumentGroupCode = 'SWAP' AND coalesce(ExpiryDate	, MaturityDate) > RiskDate) --Exclude zero MV swaps if they are at/after maturity date
 AND LocalTotalMarketValue  = 0;
 
 update #allSourceModelled
 set ReferenceRateCurvePay
  =
-    CASE		 WHEN ReferenceRateCurvePay IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''
-				 WHEN ReferenceRateCurvePay = ''CAD Swap'' and ReferenceRateTermPay=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+    CASE		 WHEN ReferenceRateCurvePay IN ('USD LIBOR', 'USLIBOR') THEN 'USD Swap - LIBOR'
+				 WHEN ReferenceRateCurvePay = 'CAD Swap' and ReferenceRateTermPay='daily' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
 						
-			 WHEN ReferenceRateCurvePay = ''CDOR'' THEN ''CAD Swap''
-			 WHEN ReferenceRateCurvePay = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
-			 WHEN ReferenceRateCurvePay IS NULL THEN ''''
+			 WHEN ReferenceRateCurvePay = 'CDOR' THEN 'CAD Swap'
+			 WHEN ReferenceRateCurvePay = 'CORRA' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
+			 WHEN ReferenceRateCurvePay IS NULL THEN ''
 			 ELSE ReferenceRateCurvePay
     END
 	,
 	ReferenceRateCurveRec =
-    CASE		 WHEN ReferenceRateCurveRec IN (''USD LIBOR'', ''USLIBOR'') THEN ''USD Swap - LIBOR''		
-					 WHEN ReferenceRateCurveRec = ''CAD Swap'' and ReferenceRateTermRec=''daily'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
+    CASE		 WHEN ReferenceRateCurveRec IN ('USD LIBOR', 'USLIBOR') THEN 'USD Swap - LIBOR'		
+					 WHEN ReferenceRateCurveRec = 'CAD Swap' and ReferenceRateTermRec='daily' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
 				
-			 WHEN ReferenceRateCurveRec = ''CDOR'' THEN ''CAD Swap''
-			 WHEN ReferenceRateCurveRec = ''CORRA'' THEN ''CAD CORRA OIS (SP)''		-- Change in MSCI RM
-			 WHEN ReferenceRateCurveRec IS NULL THEN ''''
+			 WHEN ReferenceRateCurveRec = 'CDOR' THEN 'CAD Swap'
+			 WHEN ReferenceRateCurveRec = 'CORRA' THEN 'CAD CORRA OIS (SP)'		-- Change in MSCI RM
+			 WHEN ReferenceRateCurveRec IS NULL THEN ''
 			 ELSE ReferenceRateCurveRec
     END
 
@@ -1356,7 +1352,7 @@ SELECT
 ,	 PositionName
 ,	 PositionParentId
 ,	 PositionId as HoldingId
-,    CASE WHEN ISR_streamName = ''SCD_CDS'' THEN SwapName 
+,    CASE WHEN ISR_streamName = 'SCD_CDS' THEN SwapName 
 								ELSE PositionName END	as HoldingName
 ,	 PricedSecurityName
 ,	 SecId
@@ -1544,16 +1540,16 @@ SELECT
 , FacilityType
 , FairSpread
 , CASE 
-	WHEN InstrumentClass = ''DERIVATIVE'' OR InstrumentTypeCode LIKE ''%REPO%''
+	WHEN InstrumentClass = 'DERIVATIVE' OR InstrumentTypeCode LIKE '%REPO%'
 		THEN CASE		
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 1 THEN ''''
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 8 THEN ''1 to 7 Days''
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 31 THEN ''8 to 30 Days''
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 91 THEN ''31 to 90 Days''
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 361 THEN ''91 to 360 Days''
-			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) > 360 THEN ''More than 360 Days''
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 1 THEN ''
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 8 THEN '1 to 7 Days'
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 31 THEN '8 to 30 Days'
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 91 THEN '31 to 90 Days'
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) < 361 THEN '91 to 360 Days'
+			WHEN DATEDIFF(DAY,RiskDate,MaturityDate) > 360 THEN 'More than 360 Days'
 		END	
-		ELSE ''''
+		ELSE ''
 		END AS MaturityBucket
 
 
@@ -1562,11 +1558,10 @@ SELECT
 FROM
 #allSourceModelled
 cross APPLY RM_Reference.getReportTagGroup(ISR_streamName,InstrumentTypeCode, instrumentGroupCode, InstrumentClassCode, assetClassCode/*, AccountingSystemAssetClass */) RTG
-cross APPLY [RM_Reference].[getReportTagValue_Portfolio](SourceSystem, ISR_streamName, HoldingGroupName, ''Working'') PFT
+cross APPLY [RM_Reference].[getReportTagValue_Portfolio](SourceSystem, ISR_streamName, HoldingGroupName, 'Working') PFT
 where 
- ExcludeOverride <> ''Y''
+ ExcludeOverride <> 'Y'
  )
  select * from outputView
- where SwapLegTypeCode <> ''FIXED_LEG''
- '
-EXECUTE(@SQL)
+ where SwapLegTypeCode <> 'FIXED_LEG'
+ 

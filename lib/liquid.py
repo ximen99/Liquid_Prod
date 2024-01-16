@@ -98,7 +98,7 @@ def get_ift_data(date: date) -> pd.DataFrame:
 
 
 def get_gpf_neutralization_data(port_code: str) -> pd.DataFrame:
-    sql = ut.read_sql_file(sql_path/"gpf_neutralization.sql")
+    sql = ut.read_multi_statement_sql_file(sql_path/"gpf_neutralization.sql")
     sql = ut.replace_mark_with_text(
         sql, {"?": f"{port_code}"})
     return ut.read_data_from_preston_with_string_single_statement(sql)
@@ -124,7 +124,7 @@ def get_filter_group_data() -> pd.DataFrame:
 
 
 def get_interest_rate_swap_data() -> pd.DataFrame:
-    sql = ut.read_sql_file(sql_path / "interest_rate_swap.sql")
+    sql = ut.read_multi_statement_sql_file(sql_path / "interest_rate_swap.sql")
     df = ut.read_data_from_preston_with_string_single_statement(sql)
     rule = 'RSM_InterestRateSwap_PayFloatReceiveFloat'
     df['ModelRuleEffective'] = rule
@@ -134,7 +134,7 @@ def get_interest_rate_swap_data() -> pd.DataFrame:
 
 
 def get_bayview_data(dt: date) -> pd.DataFrame:
-    sql = ut.read_sql_file(sql_path / "bayview.sql")
+    sql = ut.read_multi_statement_sql_file(sql_path / "bayview.sql")
     sql = ut.replace_mark_with_text(
         sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
     df = ut.read_data_from_preston_with_string_single_statement(sql)

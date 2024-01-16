@@ -7,6 +7,7 @@ import pandas as pd
 from typing import List
 import xlwings as xw
 import re
+from . import config
 
 
 def date_to_str(dt: date) -> str:
@@ -206,3 +207,9 @@ def read_log_files_from_folder(path: Path) -> pd.DataFrame:
         df["file_name"] = str(file.name)
         combined_df = pd.concat([combined_df, df])
     return combined_df
+
+def read_multi_statement_sql_file(path: Path) -> str:
+    template = read_sql_file(config.SQL_PATH / "multi_statement_template.sql")
+    multi_statment_sql = read_sql_file(path)
+    multi_statment_sql = multi_statment_sql.replace("'", "''")
+    return replace_mark_with_text(template, {"?": multi_statment_sql})

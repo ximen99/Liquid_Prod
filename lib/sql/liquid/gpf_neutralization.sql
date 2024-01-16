@@ -1,10 +1,6 @@
-
-SET NOCOUNT ON
-DECLARE @SQL VARCHAR(MAX)
-SET @SQL = '
 USE RMRepository
 DECLARE @portfolioCode VARCHAR(5);
-SET @portfolioCode = ''?''; -----------E0075, E0178, E0063
+SET @portfolioCode = '?'; -----------E0075, E0178, E0063
 
 
 ;WITH
@@ -17,14 +13,14 @@ as
    join srcLanding.scdMaster_PORTFOLIO_CONSOLIDATED pc ON (pos.EDM_PORTFOLIO_ID = pc.EDM_PORTFOLIO_ID)
 WHERE 
   pc.SCD_PORTFOLIO_CODE = @portfolioCode /* change to MDS lookup if more instances  */ 
-  AND pc.FUND_TYPE_CODE = ''POOL''
+  AND pc.FUND_TYPE_CODE = 'POOL'
 ),
 
 Contra
  as
- (SELECT 1 Factor, ''UNITS'' Destination
+ (SELECT 1 Factor, 'UNITS' Destination
  UNION ALL   
- SELECT -1 Factor, ''NEUTRALIZATION'' Destination
+ SELECT -1 Factor, 'NEUTRALIZATION' Destination
  )
  , DistributionValues
 AS (
@@ -37,8 +33,8 @@ join    srcLanding.scdMaster_FN_PORTFOLIO  P on (p.EDM_PORTFOLIO_ID = Pos.EDM_PO
 join    srcLanding.scdMaster_INSTRUMENT_CONSOLIDATED S on (Pos.EDM_INSTRUMENT_ID = S.EDM_INSTRUMENT_ID)
 
 WHERE 
-			P.FUND_TYPE_CODE = ''POOL''
-		AND Pos.SUB_PORTFOLIO_CODE	= ''E0E0225''
+			P.FUND_TYPE_CODE = 'POOL'
+		AND Pos.SUB_PORTFOLIO_CODE	= 'E0E0225'
 		AND coalesce(s.scd_sec_id, S.IPS_SECURITY_ID) = @portfolioCode ------------------------------------Portfolio Code parameter used
 )
 ,
@@ -51,7 +47,7 @@ SourceValues as
    join srcLanding.scdMaster_PORTFOLIO_CONSOLIDATED pc ON (pos.EDM_PORTFOLIO_ID = pc.EDM_PORTFOLIO_ID)
   WHERE 
   pc.SCD_PORTFOLIO_CODE = @portfolioCode /* change to MDS lookup if more instances  */  ------------------------------------Portfolio Code parameter used
-  AND pc.FUND_TYPE_CODE = ''POOL''
+  AND pc.FUND_TYPE_CODE = 'POOL'
   GROUP BY pc.SCD_PORTFOLIO_CODE,pc.EDM_PORTFOLIO_ID
   )
   ,
@@ -76,16 +72,16 @@ SELECT
 asm.*,
 s.Scale ,
 CASE  s.Destination
-	WHEN ''UNITS'' then up.srcPoolFundCode + ''_UNITS''  
-	WHEN ''NEUTRALIZATION'' THEN ''RISKNEU'' + up.srcPoolFundCode
+	WHEN 'UNITS' then up.srcPoolFundCode + '_UNITS'  
+	WHEN 'NEUTRALIZATION' THEN 'RISKNEU' + up.srcPoolFundCode
 	END
 	AS ParentPortfolioCode_Override,   /*  this is the destination portfolio  */
-''UNIT_REALLOCATION'' as ISR_streamName_Override,
+'UNIT_REALLOCATION' as ISR_streamName_Override,
 /* derive new position id  */
 CASE  s.Destination
-	WHEN ''UNITS'' then up.srcPoolFundCode + ''_UNITS''  
-	WHEN ''NEUTRALIZATION'' THEN ''RISKNEU'' + up.srcPoolFundCode 
-	END + ''_'' +  PositionId 
+	WHEN 'UNITS' then up.srcPoolFundCode + '_UNITS'  
+	WHEN 'NEUTRALIZATION' THEN 'RISKNEU' + up.srcPoolFundCode 
+	END + '_' +  PositionId 
 	AS	PositionId_OVerride,
 
 /* scale these columns for allocated positions */
@@ -113,7 +109,7 @@ s.Scale  * AmortizedBookValueLocal  AS   AmortizedBookValueLocal_Override
 FROM rmstg.AllSource_Modelled asm  
 JOIN UnitPortfolios up ON (asm.PortfolioCode	= up.PortfolioCode	)
 CROSS JOIN Scales s
-WHERE asm.ExcludeOverride = ''N''
+WHERE asm.ExcludeOverride = 'N'
 ), modelled as 
 
 (
@@ -201,7 +197,7 @@ SELECT
 ,	 PositionName
 ,	 PositionParentId
 ,	 PositionId as HoldingId
-,    CASE WHEN ISR_streamName = ''SCD_CDS'' THEN SwapName 
+,    CASE WHEN ISR_streamName = 'SCD_CDS' THEN SwapName 
 								ELSE PositionName END	as HoldingName
 ,	 PricedSecurityName
 ,	 SecId
@@ -388,7 +384,7 @@ SELECT
 , null LienType
 , null FacilityType
 , null FairSpread
-, '''' AS MaturityBucket
+, '' AS MaturityBucket
 
 
 /*,	 HasLookthrough
@@ -403,8 +399,7 @@ SELECT
 FROM
 modelled --rmstg.[AllSource_Modelled]
 cross APPLY RM_Reference.getReportTagGroup(ISR_streamName,InstrumentTypeCode, instrumentGroupCode, InstrumentClassCode, assetClassCode/*, AccountingSystemAssetClass */) RTG
-cross APPLY [RM_Reference].[getReportTagValue_Portfolio](SourceSystem, ISR_streamName, HoldingGroupName, ''Working'') PFT
+cross APPLY [RM_Reference].[getReportTagValue_Portfolio](SourceSystem, ISR_streamName, HoldingGroupName, 'Working') PFT
 where 
- ExcludeOverride <> ''Y''
- and ParentPortfolioCode like ''%?%'' ---------------------Change ParentPortfolioCode to Variable code value passed in line 3'
-EXECUTE(@SQL)
+ ExcludeOverride <> 'Y'
+ and ParentPortfolioCode like '%?%' ---------------------Change ParentPortfolioCode to Variable code value passed in line 3

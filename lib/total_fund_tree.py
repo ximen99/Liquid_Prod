@@ -129,7 +129,7 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
 
 
 def get_gpf_mv(dt: date):
-    sql = ut.read_sql_file(sql_path/"gpf.sql")
+    sql = ut.read_multi_statement_sql_file(sql_path/"gpf.sql")
     sql = ut.replace_mark_with_text(
         sql, {"@valuationDate": f"''{ut.date_to_str_with_dash(dt)}''"})
     return ut.read_data_from_preston_with_string_single_statement(sql)
