@@ -34,7 +34,7 @@ join    srcLanding.scdMaster_INSTRUMENT_CONSOLIDATED S on (Pos.EDM_INSTRUMENT_ID
 
 WHERE 
 			P.FUND_TYPE_CODE = 'POOL'
-		AND Pos.SUB_PORTFOLIO_CODE	= 'E0E0225'
+		AND Pos.SUB_PORTFOLIO_CODE	IN ('E0E0225','E0175')
 		AND coalesce(s.scd_sec_id, S.IPS_SECURITY_ID) = @portfolioCode ------------------------------------Portfolio Code parameter used
 )
 ,

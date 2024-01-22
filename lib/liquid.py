@@ -105,7 +105,7 @@ def get_gpf_neutralization_data(port_code: str) -> pd.DataFrame:
 
 
 def get_all_gpf_neutralization_data() -> pd.DataFrame:
-    port_codes = ["E0075", "E0178", "E0063","E0175"]
+    port_codes = ["E0075", "E0178", "E0063","E0180"]
     df = pd.DataFrame()
     for port_code in port_codes:
         df = df.append(get_gpf_neutralization_data(
