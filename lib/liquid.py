@@ -49,12 +49,12 @@ def update_env_file_date(from_date, to_date):
 
 
 def update_env_file_position(date: date, position: str) -> None:
-    if position not in ["Basket_Hedge", "Fix", "IFT", "Illiquids", "Main"]:
+    if position not in ["Basket_Hedge", "Fix", "IFT", "Illiquids", "Main", "FixTwo"]:
         raise Exception(
-            "position not valid, please choose in Basket_Hedge, Fix, IFT, Illiquids, Main")
+            "position not valid, please choose in Basket_Hedge, Fix, FixTwo, IFT, Illiquids, Main")
     path = create_folder_path(base_path, date)
     file_path = path / "NewArch_LiquidsDerivatives V1 CSV.environment"
-    position_regex = r"Basket_Hedge|Fix|IFT|Illiquids|Main"
+    position_regex = r"Basket_Hedge|Fix|IFT|Illiquids|Main|FixTwo"
     ut.replace_text_in_file_with_regex(file_path, position_regex, position)
 
 
@@ -150,11 +150,23 @@ def get_bayview_data(dt: date) -> pd.DataFrame:
         df['MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV'].iloc[0]]*2
     return template
 
+def get_re_ift() -> pd.DataFrame:
+    df = ut.read_data_from_preston_with_sql_file(sql_path / "IFT_RE.sql")
+    df['RiskCountryCode'] = 'CA'
+    df['ModelRuleEffective'] = 'IFT Loans'
+    df['ModelRuleDefault'] = 'IFT Loans'
+    df['IssuerCode'] = 'British Columbia Investment Management Corp'
+    df['IssuerCurve'] = 'CAD Financial AA'
+    return df
+
+def get_pcf_cash() -> pd.DataFrame:
+    df = ut.read_data_from_preston_with_sql_file(sql_path / "pcf_cash.sql")
+    return df
 
 def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
-    if type not in ["Basket_Hedge", "Illiquids", "Main", "IFT", "Fix"]:
+    if type not in ["Basket_Hedge", "Illiquids", "Main", "IFT", "Fix","FixTwo"]:
         raise Exception(
-            "type not valid, please choose in Basket_Hedge, Illiquids, Main, IFT, Fix")
+            "type not valid, please choose in Basket_Hedge, Illiquids, Main, IFT, Fix, FixTwo")
 
     folder_path = create_folder_path(base_path, dt, False) / "Files"
     excel_file_regex = r"Positions_\d{8}_"+type+".xlsx"
@@ -184,6 +196,7 @@ def save_weekly_liquid_data(date) -> None:
     hedge = get_hedge_data()
     basket = get_basket_data()
     to_download["Basket_Hedge"] = pd.concat([basket, hedge])
+    to_download["FixTwo"] = pd.concat([get_re_ift(), get_pcf_cash()])
 
     for name, df in to_download.items():
         df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
