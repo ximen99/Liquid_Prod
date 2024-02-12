@@ -191,7 +191,7 @@ def save_weekly_liquid_data(date) -> None:
     prefix = "Positions_"+ut.date_to_str(date)
     to_download["IFT"] = get_ift_data(date)
     to_download["Main"] = pd.concat(
-        [get_main_data(), get_all_gpf_neutralization_data(), get_interest_rate_swap_data(), get_bayview_data(date)])
+        [get_main_data(), get_interest_rate_swap_data(), get_bayview_data(date)])
     to_download["Illiquids"] = get_illiquids_data()
     hedge = get_hedge_data()
     basket = get_basket_data()
