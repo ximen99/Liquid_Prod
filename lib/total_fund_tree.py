@@ -73,6 +73,13 @@ def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
     ut.delete_files_name_contains(path, file_name)
     print("Updated " + save_to_name + " in " + str(path))
 
+def get_gpf_pv_report_path(dt:date) -> str:
+    folder_path = create_folder_path(PROD_PATH, dt, False) / "Scale Calculation"
+    return folder_path / "PV Report GPF Ext Man " + ut.date_to_str(dt) + ".xlsx"
+
+def get_mtg_pv_report_path(dt: date) -> str:
+    folder_path = create_folder_path(PROD_PATH, dt, False) / "Scale Calculation"
+    return folder_path / "PV Report E0043 Ext Man " + ut.date_to_str(dt) + ".xlsx"
 
 def create_extMan_PV_reports(to_date: date) -> None:
     path = create_folder_path(BASE_PATH, to_date, False) / "Scale Calculation"
@@ -96,8 +103,7 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
         (file_prefix + ut.date_to_str(from_date) + ".xlsx")
     save_to_path = folder_path / \
         (file_prefix + ut.date_to_str(to_date) + ".xlsx")
-    pv_path = folder_path / \
-        ("PV Report E0043 Ext Man " + ut.date_to_str(to_date) + ".xlsx")
+    pv_path = get_mtg_pv_report_path(to_date)
     pv_data = (
         pd.read_excel(pv_path, skiprows=19,
                       usecols=lambda x: 'Unnamed' not in x)
@@ -143,8 +149,7 @@ def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
         (file_prefix + ut.date_to_str(from_date) + ".xlsx")
     save_to_path = folder_path / \
         (file_prefix + ut.date_to_str(to_date) + ".xlsx")
-    pv_path = folder_path / \
-        ("PV Report GPF Ext Man " + ut.date_to_str(to_date) + ".xlsx")
+    pv_path = get_gpf_pv_report_path(to_date)
     pv_data = (
         pd.read_excel(pv_path, skiprows=19,
                       usecols=lambda x: 'Unnamed' not in x)
