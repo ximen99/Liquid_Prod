@@ -5,10 +5,10 @@ from . import config
 import xlwings as xw
 import pandas as pd
 
-prod_path = Path(
+PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\TREE\Total Fund Tree")
-base_path = config.DEV_PATH if config.IS_DEV else prod_path
-sql_path = Path(__file__).parent / "sql" / "total_fund_tree"
+BASE_PATH = config.DEV_PATH if config.IS_DEV else PROD_PATH
+SQL_PATH = Path(__file__).parent / "sql" / "total_fund_tree"
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
@@ -21,7 +21,7 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool = Fa
 
 
 def delete_files(from_date: date, to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.delete_files_except_extensions(
         to_path / "Loading", [".environment", ".rst4"])
     ut.delete_files_with_extension(to_path, ".csv")
@@ -32,9 +32,9 @@ def delete_files(from_date: date, to_date: date) -> None:
 
 
 def update_env_file(from_date, to_date):
-    from_path = create_folder_path(prod_path, from_date, False)
-    to_path = create_folder_path(prod_path, to_date, False)
-    file_path = create_folder_path(base_path, to_date, False) / \
+    from_path = create_folder_path(PROD_PATH, from_date, False)
+    to_path = create_folder_path(PROD_PATH, to_date, False)
+    file_path = create_folder_path(BASE_PATH, to_date, False) / \
         "Loading" / "TotalFundHierarchy Prod Load.environment"
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
@@ -44,8 +44,8 @@ def update_env_file(from_date, to_date):
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
-    from_path = create_folder_path(base_path, from_date, False)
-    to_path = create_folder_path(base_path, to_date, False)
+    from_path = create_folder_path(BASE_PATH, from_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(from_date, to_date)
     update_env_file(from_date, to_date)
@@ -75,7 +75,7 @@ def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
 
 
 def create_extMan_PV_reports(to_date: date) -> None:
-    path = create_folder_path(base_path, to_date, False) / "Scale Calculation"
+    path = create_folder_path(BASE_PATH, to_date, False) / "Scale Calculation"
     ut.loop_through_files_contains(
         path, "PV Report Liquids External Manager", update_extMan_PV_report, to_date)
 
@@ -83,7 +83,7 @@ def create_extMan_PV_reports(to_date: date) -> None:
 def get_fx_rate(to_date: date) -> float:
     return (
         ut.read_data_from_preston_with_sql_file(
-            sql_path/"fx.sql", [ut.date_to_str_with_dash(to_date)])
+            SQL_PATH/"fx.sql", [ut.date_to_str_with_dash(to_date)])
         .loc[0, "IPS_CAD_QUOTE_MID"]
     )
 
@@ -91,7 +91,7 @@ def get_fx_rate(to_date: date) -> float:
 def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
     file_prefix = "Scale calculation E0043 "
     folder_path = create_folder_path(
-        base_path, to_date, False) / "Scale Calculation"
+        BASE_PATH, to_date, False) / "Scale Calculation"
     file_path = folder_path / \
         (file_prefix + ut.date_to_str(from_date) + ".xlsx")
     save_to_path = folder_path / \
@@ -129,7 +129,7 @@ def update_mtg_scale_calc(from_date: date, to_date: date) -> None:
 
 
 def get_gpf_mv(dt: date):
-    sql = ut.read_multi_statement_sql_file(sql_path/"gpf.sql")
+    sql = ut.read_multi_statement_sql_file(SQL_PATH/"gpf.sql")
     sql = ut.replace_mark_with_text(
         sql, {"@valuationDate": f"''{ut.date_to_str_with_dash(dt)}''"})
     return ut.read_data_from_preston_with_string_single_statement(sql)
@@ -138,7 +138,7 @@ def get_gpf_mv(dt: date):
 def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
     file_prefix = "Scale calculation GPF "
     folder_path = create_folder_path(
-        base_path, to_date, False) / "Scale Calculation"
+        BASE_PATH, to_date, False) / "Scale Calculation"
     file_path = folder_path / \
         (file_prefix + ut.date_to_str(from_date) + ".xlsx")
     save_to_path = folder_path / \
@@ -203,7 +203,7 @@ def get_scale_df(folder_path: Path, folder_date: date) -> pd.DataFrame:
 
 def update_total_fund_tree(to_date: date) -> None:
     file_name = "Total_Fund_Tree _" + ut.date_to_str(to_date) + ".xlsx"
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     scale = get_scale_df(path, to_date)
     with xw.App(visible=False) as app:
         wb = app.books.open(path / file_name)
@@ -226,7 +226,7 @@ def update_total_fund_tree(to_date: date) -> None:
 
 def update_total_fund_pv_report(to_date: date) -> None:
     file_name = "Total Fund PV Report.xlsx"
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
 
     with xw.App(visible=False) as app:
         wb = app.books.open(path / file_name)
@@ -280,6 +280,6 @@ def GPF_Managers_MV_excel_operation(wb: xw.Book, dt: date) -> None:
 
 def update_GPF_Managers_MV(to_date: date) -> None:
     file_name = "GPF Managers Weekly & Monthly MV.xlsx"
-    path = create_folder_path(base_path, to_date, False) / "Queries"
+    path = create_folder_path(BASE_PATH, to_date, False) / "Queries"
     ut.work_on_excel(GPF_Managers_MV_excel_operation,
                      path / file_name, None, to_date)

@@ -6,9 +6,9 @@ from . import total_fund_tree
 import pandas as pd
 import xlwings as xw
 
-prod_path = Path(
+PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\TREE\Total Fund BMK Tree")
-base_path = config.DEV_PATH if config.IS_DEV else prod_path
+BASE_PATH = config.DEV_PATH if config.IS_DEV else PROD_PATH
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
@@ -21,16 +21,16 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool = Fa
 
 
 def delete_files(to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.delete_files_except_extensions(
         to_path / "Loading", [".environment", ".rst4"])
     ut.delete_files_with_extension(to_path, ".csv")
 
 
 def update_env_file(from_date, to_date):
-    from_path = create_folder_path(prod_path, from_date, False)
-    to_path = create_folder_path(prod_path, to_date, False)
-    file_path = create_folder_path(base_path, to_date, False) / "Loading"
+    from_path = create_folder_path(PROD_PATH, from_date, False)
+    to_path = create_folder_path(PROD_PATH, to_date, False)
+    file_path = create_folder_path(BASE_PATH, to_date, False) / "Loading"
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
     for file_path in file_path.glob("*.environment"):
@@ -40,8 +40,8 @@ def update_env_file(from_date, to_date):
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
-    from_path = create_folder_path(base_path, from_date, False)
-    to_path = create_folder_path(base_path, to_date, False)
+    from_path = create_folder_path(BASE_PATH, from_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(to_date)
     update_env_file(from_date, to_date)
@@ -70,9 +70,9 @@ def update_single_bmk_tree(folder_path: Path, file_name: str, scale_df: pd.DataF
 
 
 def update_total_fund_bmk_tree(to_date: date) -> None:
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     total_fund_tree_path = total_fund_tree.create_folder_path(
-        total_fund_tree.prod_path, to_date, False)
+        total_fund_tree.PROD_PATH, to_date, False)
     scale_df = total_fund_tree.get_scale_df(total_fund_tree_path, to_date)
     pv_df = (
         pd.read_excel(total_fund_tree_path /

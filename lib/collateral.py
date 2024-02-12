@@ -3,9 +3,9 @@ from . import utils as ut
 from datetime import date
 from . import config
 
-prod_path = Path(
+PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Collateral")
-base_path = config.DEV_PATH if config.IS_DEV else prod_path
+BASE_PATH = config.DEV_PATH if config.IS_DEV else PROD_PATH
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> Path:
@@ -19,16 +19,16 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool) -> 
 
 
 def delete_files(to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.delete_files_except_extensions(
         to_path / "Loading", [".environment", ".rst4"])
     ut.delete_files_with_extension(to_path, ".csv")
 
 
 def update_env_file(from_date, to_date):
-    from_path = create_folder_path(prod_path, from_date, False)
-    to_path = create_folder_path(prod_path, to_date, False)
-    file_path = create_folder_path(base_path, to_date, False) / \
+    from_path = create_folder_path(PROD_PATH, from_date, False)
+    to_path = create_folder_path(PROD_PATH, to_date, False)
+    file_path = create_folder_path(BASE_PATH, to_date, False) / \
         "Loading" / "OTC_Collateral.environment"
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
@@ -38,13 +38,13 @@ def update_env_file(from_date, to_date):
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
-    from_path = create_folder_path(base_path, from_date, False)
-    to_path = create_folder_path(base_path, to_date, False)
+    from_path = create_folder_path(BASE_PATH, from_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(to_date)
     update_env_file(from_date, to_date)
 
 
 def convert_to_csv(to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.excel_to_csv(to_path / f"OTC_Collateral_{ut.date_to_str(to_date)}.xlsx")

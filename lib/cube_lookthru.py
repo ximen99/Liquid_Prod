@@ -4,13 +4,13 @@ from datetime import date
 from . import config
 import pandas as pd
 import xlwings as xw
+from . import total_fund_tree as tft
 
-
-prod_path = Path(
+PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\TREE\Lookthrough for Cube")
-base_path = config.DEV_PATH if config.IS_DEV else prod_path
-sql_path = Path(__file__).parent / "sql" / "lookthrough"
-
+BASE_PATH = config.DEV_PATH if config.IS_DEV else PROD_PATH
+SQL_PATH = Path(__file__).parent / "sql" / "lookthrough"
+PORT_LS = ['ECOMPASS', 'EISOMAIA', 'EISOBOR']
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
     yearStr = str(folder_date.year)
@@ -21,16 +21,16 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool = Fa
 
 
 def delete_files(to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.delete_files_except_extensions(
         to_path / "Loading", [".environment", ".rst4"])
     ut.delete_files_with_extension(to_path, ".csv")
 
 
 def update_env_file(from_date: date, to_date: date):
-    from_path = create_folder_path(prod_path, from_date, False)
-    to_path = create_folder_path(prod_path, to_date, False)
-    file_path = create_folder_path(base_path, to_date, False) / \
+    from_path = create_folder_path(PROD_PATH, from_date, False)
+    to_path = create_folder_path(PROD_PATH, to_date, False)
+    file_path = create_folder_path(BASE_PATH, to_date, False) / \
         "Loading" / "Lookthrough Index Cube.environment"
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
@@ -40,33 +40,32 @@ def update_env_file(from_date: date, to_date: date):
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
-    from_path = create_folder_path(base_path, from_date, False)
-    to_path = create_folder_path(base_path, to_date, False)
+    from_path = create_folder_path(BASE_PATH, from_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(to_date)
     update_env_file(from_date, to_date)
 
 
 def get_lookthru_data() -> pd.DataFrame:
-    path = sql_path / "lookthrough.sql"
+    path = SQL_PATH / "lookthrough.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_indexCSV_data() -> pd.DataFrame:
-    path = sql_path / "indexCSV.sql"
+    path = SQL_PATH / "indexCSV.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def create_lookthru_cube(from_date: date, to_date: date) -> None:
     new_week_df_to_append = get_indexCSV_data()
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     file_prefix = "Lookthrough - Cube -  "
     old_week_str = ut.date_to_str(from_date)
     new_week_str = ut.date_to_str(to_date)
-    port_ls = ['ECOMPASS', 'EISOMAIA', 'EISOBOR']
     ecompass_df = (
         pd.read_excel(path / (file_prefix + old_week_str + ".xlsx"))
-        .query(f"MSCI_RM_INDEX_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
+        .query(f"MSCI_RM_INDEX_ID.str.contains('{'|'.join(PORT_LS)}')", engine="python")
         .assign(
             MSCI_RM_INDEX_ID=lambda _df: _df["MSCI_RM_INDEX_ID"].str.replace(
                 old_week_str, new_week_str),
@@ -93,21 +92,20 @@ def create_lookthru_cube(from_date: date, to_date: date) -> None:
 
 
 def turn_lookthru_cube_to_csv(to_date: date) -> None:
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     file_name = f"Lookthrough - Cube -  {ut.date_to_str(to_date)}.xlsx"
     ut.excel_to_csv(path / file_name)
 
 
 def create_LookthroughMapping(from_date: date, to_date: date) -> None:
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     file_prefix = "LookthroughMapping_"
     old_week_str = ut.date_to_str(from_date)
     new_week_str = ut.date_to_str(to_date)
     old_week_df = pd.read_excel(
         path / (file_prefix + old_week_str + ".xlsx"), index_col=0)
-    port_ls = ['ECOMPASS', 'EISOMAIA', 'EISOBOR']
     ecompass_df = old_week_df.query(
-        f"BCI_ID.str.contains('{'|'.join(port_ls)}')", engine="python")
+        f"BCI_ID.str.contains('{'|'.join(PORT_LS)}')", engine="python")
     new_week_df_to_append = (
         get_lookthru_data()
         .replace('', pd.NA)
@@ -134,6 +132,10 @@ def create_LookthroughMapping(from_date: date, to_date: date) -> None:
 
 
 def turn_LookthruMapping_to_csv(to_date: date) -> None:
-    path = create_folder_path(base_path, to_date, False)
+    path = create_folder_path(BASE_PATH, to_date, False)
     file_name = f"LookthroughMapping_{ut.date_to_str(to_date)}.xlsx"
     ut.excel_to_csv(path / file_name)
+
+
+def get_ext_managers_df() -> pd.DataFrame:
+    path = tft.create_folder_path(tft.p)

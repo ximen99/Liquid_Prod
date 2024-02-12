@@ -8,10 +8,10 @@ import numpy as np
 from . import mds
 from typing import List
 
-prod_path = Path(
+PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\LIQUID\Liquid")
-base_path = config.DEV_PATH if config.IS_DEV else prod_path
-sql_path = config.SQL_PATH / "liquid"
+BASE_PATH = config.DEV_PATH if config.IS_DEV else PROD_PATH
+SQL_PATH = config.SQL_PATH / "liquid"
 
 
 def create_folder_path(basePath: Path, folder_date: date, create_path: bool = False) -> Path:
@@ -25,7 +25,7 @@ def create_folder_path(basePath: Path, folder_date: date, create_path: bool = Fa
 
 
 def delete_files(from_date: date, to_date: date) -> None:
-    to_path = create_folder_path(base_path, to_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.delete_files_in_folder(to_path / "Mapping")
     ut.delete_files_in_folder(to_path / "Results")
     ut.delete_files_with_extension(to_path / "Files", ".csv")
@@ -37,10 +37,10 @@ def delete_files(from_date: date, to_date: date) -> None:
 
 
 def update_env_file_date(from_date, to_date):
-    from_path = create_folder_path(prod_path, from_date, False)
-    to_path = create_folder_path(prod_path, to_date, False)
+    from_path = create_folder_path(PROD_PATH, from_date, False)
+    to_path = create_folder_path(PROD_PATH, to_date, False)
     file_path = create_folder_path(
-        base_path, to_date, False) / "NewArch_LiquidsDerivatives V1 CSV.environment"
+        BASE_PATH, to_date, False) / "NewArch_LiquidsDerivatives V1 CSV.environment"
     from_date_str = ut.date_to_str(from_date)
     to_date_str = ut.date_to_str(to_date)
     ut.replace_text_in_file(
@@ -52,15 +52,15 @@ def update_env_file_position(date: date, position: str) -> None:
     if position not in ["Basket_Hedge", "Fix", "IFT", "Illiquids", "Main", "FixTwo"]:
         raise Exception(
             "position not valid, please choose in Basket_Hedge, Fix, FixTwo, IFT, Illiquids, Main")
-    path = create_folder_path(base_path, date)
+    path = create_folder_path(BASE_PATH, date)
     file_path = path / "NewArch_LiquidsDerivatives V1 CSV.environment"
     position_regex = r"Basket_Hedge|Fix|IFT|Illiquids|Main|FixTwo"
     ut.replace_text_in_file_with_regex(file_path, position_regex, position)
 
 
 def create_template_folder(from_date: date, to_date: date) -> None:
-    from_path = create_folder_path(base_path, from_date, False)
-    to_path = create_folder_path(base_path, to_date, False)
+    from_path = create_folder_path(BASE_PATH, from_date, False)
+    to_path = create_folder_path(BASE_PATH, to_date, False)
     ut.copy_folder_with_check(from_path, to_path)
     delete_files(from_date, to_date)
     update_env_file_date(from_date, to_date)
@@ -68,17 +68,17 @@ def create_template_folder(from_date: date, to_date: date) -> None:
 
 
 def get_all_liquid_except_CIBC() -> pd.DataFrame:
-    path = sql_path / "all_liquid_except_CIBC.sql"
+    path = SQL_PATH / "all_liquid_except_CIBC.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_basket_data() -> pd.DataFrame:
-    path = sql_path / "basket.sql"
+    path = SQL_PATH / "basket.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_hedge_data(check_type: bool = True) -> pd.DataFrame:
-    path = sql_path / "hedge.sql"
+    path = SQL_PATH / "hedge.sql"
     df = ut.read_data_from_preston_with_sql_file(path)
     if check_type:
         if (df["ISR_streamName"] != "SCD_FXFWD").any():
@@ -87,18 +87,18 @@ def get_hedge_data(check_type: bool = True) -> pd.DataFrame:
 
 
 def get_illiquids_data() -> pd.DataFrame:
-    path = sql_path / "illiquids.sql"
+    path = SQL_PATH / "illiquids.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_ift_data(date: date) -> pd.DataFrame:
-    path = sql_path / "IFT.sql"
+    path = SQL_PATH / "IFT.sql"
     date_str = ut.date_to_str_with_dash(date)
     return ut.read_data_from_preston_with_sql_file(path, [date_str])
 
 
 def get_gpf_neutralization_data(port_code: str) -> pd.DataFrame:
-    sql = ut.read_multi_statement_sql_file(sql_path/"gpf_neutralization.sql")
+    sql = ut.read_multi_statement_sql_file(SQL_PATH/"gpf_neutralization.sql")
     sql = ut.replace_mark_with_text(
         sql, {"?": f"{port_code}"})
     return ut.read_data_from_preston_with_string_single_statement(sql)
@@ -114,17 +114,17 @@ def get_all_gpf_neutralization_data() -> pd.DataFrame:
 
 
 def get_main_data() -> pd.DataFrame:
-    path = sql_path / "main.sql"
+    path = SQL_PATH / "main.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_filter_group_data() -> pd.DataFrame:
-    path = sql_path / "portfolio_filter_group.sql"
+    path = SQL_PATH / "portfolio_filter_group.sql"
     return ut.read_data_from_preston_with_sql_file(path)
 
 
 def get_interest_rate_swap_data() -> pd.DataFrame:
-    sql = ut.read_multi_statement_sql_file(sql_path / "interest_rate_swap.sql")
+    sql = ut.read_multi_statement_sql_file(SQL_PATH / "interest_rate_swap.sql")
     df = ut.read_data_from_preston_with_string_single_statement(sql)
     rule = 'RSM_InterestRateSwap_PayFloatReceiveFloat'
     df['ModelRuleEffective'] = rule
@@ -134,7 +134,7 @@ def get_interest_rate_swap_data() -> pd.DataFrame:
 
 
 def get_bayview_data(dt: date) -> pd.DataFrame:
-    sql = ut.read_multi_statement_sql_file(sql_path / "bayview.sql")
+    sql = ut.read_multi_statement_sql_file(SQL_PATH / "bayview.sql")
     sql = ut.replace_mark_with_text(
         sql, {"?": f"{ut.date_to_str_with_dash(dt)}"})
     df = ut.read_data_from_preston_with_string_single_statement(sql)
@@ -151,7 +151,7 @@ def get_bayview_data(dt: date) -> pd.DataFrame:
     return template
 
 def get_re_ift() -> pd.DataFrame:
-    df = ut.read_data_from_preston_with_sql_file(sql_path / "IFT_RE.sql")
+    df = ut.read_data_from_preston_with_sql_file(SQL_PATH / "IFT_RE.sql")
     df['RiskCountryCode'] = 'CA'
     df['ModelRuleEffective'] = 'IFT Loans'
     df['ModelRuleDefault'] = 'IFT Loans'
@@ -160,7 +160,7 @@ def get_re_ift() -> pd.DataFrame:
     return df
 
 def get_pcf_cash() -> pd.DataFrame:
-    df = ut.read_data_from_preston_with_sql_file(sql_path / "pcf_cash.sql")
+    df = ut.read_data_from_preston_with_sql_file(SQL_PATH / "pcf_cash.sql")
     return df
 
 def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
@@ -168,7 +168,7 @@ def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
         raise Exception(
             "type not valid, please choose in Basket_Hedge, Illiquids, Main, IFT, Fix, FixTwo")
 
-    folder_path = create_folder_path(base_path, dt, False) / "Files"
+    folder_path = create_folder_path(BASE_PATH, dt, False) / "Files"
     excel_file_regex = r"Positions_\d{8}_"+type+".xlsx"
     file_path = ut.get_files_with_regex(folder_path, excel_file_regex)
 
@@ -186,7 +186,7 @@ def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
 
 
 def save_weekly_liquid_data(date) -> None:
-    path = create_folder_path(base_path, date, True)
+    path = create_folder_path(BASE_PATH, date, True)
     to_download = {}
     prefix = "Positions_"+ut.date_to_str(date)
     to_download["IFT"] = get_ift_data(date)
@@ -205,8 +205,8 @@ def save_weekly_liquid_data(date) -> None:
 
 
 def create_fix_file(dt: date) -> None:
-    save_folder_path = create_folder_path(base_path, dt) / "Files"
-    result_folder_path = create_folder_path(base_path, dt) / "Results"
+    save_folder_path = create_folder_path(BASE_PATH, dt) / "Files"
+    result_folder_path = create_folder_path(BASE_PATH, dt) / "Results"
     rejected_bond = (
         pd.read_csv(result_folder_path /
                     ("Main_"+ut.date_to_str(dt)+"_log.csv"))
@@ -240,7 +240,7 @@ def create_fix_file(dt: date) -> None:
 
 
 def create_portfolio_filter_group(from_date: date, to_date: date) -> None:
-    path = create_folder_path(base_path, to_date)
+    path = create_folder_path(BASE_PATH, to_date)
     new_week_portfolios = (
         get_filter_group_data()
         ['ParentPortfolioCode']
@@ -341,7 +341,7 @@ def check_date(df: pd.DataFrame, dt: date) -> pd.DataFrame:
 
 def create_pv_validation(dt: date) -> None:
 
-    path = create_folder_path(base_path, dt)
+    path = create_folder_path(BASE_PATH, dt)
     mv_df = (
         pd.concat([get_filter_group_data(), get_ift_data(
             dt), get_interest_rate_swap_data()])
@@ -420,6 +420,6 @@ def get_index_map(index: List[str], dt: date):
 
 
 def compile_log(dt: date) -> None:
-    path = create_folder_path(base_path, dt) / "Results"
+    path = create_folder_path(BASE_PATH, dt) / "Results"
     log = ut.read_log_files_from_folder(path)
     log.to_csv(path / "log.csv", index=False)
