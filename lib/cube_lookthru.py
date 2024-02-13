@@ -7,6 +7,8 @@ import pandas as pd
 import xlwings as xw
 from . import total_fund_tree as tft
 import re
+from . import liquid
+
 
 PROD_PATH = Path(
     r"S:\IT IRSR Shared\RedSwan\RedSwan\Master_bcIMC\TREE\Lookthrough for Cube")
@@ -144,6 +146,16 @@ def create_LookthroughMapping(from_date: date, to_date: date, update_msci:bool =
     ut.delete_files_name_contains(
         path, f"{file_prefix}{old_week_str}.xlsx")
 
+def get_lookthru_benchmark_null() -> pd.DataFrame:
+    df = get_lookthru_data()
+    liquid_df = liquid.get_all_liquid_except_CIBC()[['PositionId','PositionName']].rename(columns={"PositionId":"BCI_ID"})
+    instrument_ls = ["Equity Index Option"]
+    return (df
+            .query("BENCHMARK_ID == ''", engine="python")
+            .query("~INSTRUMENT_TYPE.isin(@instrument_ls)", engine="python")
+            .merge(liquid_df, on = "BCI_ID", how="left")
+            )
+    
 
 def turn_LookthruMapping_to_csv(to_date: date) -> None:
     path = create_folder_path(BASE_PATH, to_date, False)
