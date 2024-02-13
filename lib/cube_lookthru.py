@@ -114,15 +114,17 @@ def create_LookthroughMapping(from_date: date, to_date: date, update_msci:bool =
     old_week_str = ut.date_to_str(from_date)
     new_week_str = ut.date_to_str(to_date)
     old_week_df = pd.read_excel(
-        path / (file_prefix + old_week_str + ".xlsx"))
+        path / (file_prefix + old_week_str + ".xlsx"),index_col=0)
     
     msci_load_df = old_week_df.query(
-        f"BCI_ID.str.contains('{'|'.join(PORT_LS)}')", engine="python")
+        f"BCI_ID.str.contains('{'|'.join(PORT_LS)}')", engine="python").reset_index()
     
     new_week_df_to_append = (
         get_lookthru_data()
         .replace('', pd.NA)
+        .set_index("BCI_ID")
         .assign(BENCHMARK_ID=lambda _df: _df["BENCHMARK_ID"].fillna(old_week_df["BENCHMARK_ID"]))
+        .reset_index()
     )
 
     if update_msci:
@@ -193,7 +195,7 @@ def update_msci_load_df_cube(old_df: pd.DataFrame, pv_df:pd.DataFrame, new_week_
                                 INDEX_NAME = new_positions["ETSecurityIdentifier"].apply(get_index_name),
                                 BENCHMARK_ID = np.nan,
                                 INSTRUMENT_TYPE = new_positions["instrumentType"],
-                                PRICED_SECURITY_NAME= new_positions["BCI_Id"].apply(lambda id: f"CUBE_{id}_{new_week_str}"), 
+                                PRICED_SECURITY_NAME= new_positions["BCI_Id"].apply(lambda id: f"CUBE_{id}"), 
                             )
     )
     return pd.concat([old_df, new_positions_updated], ignore_index=True).sort_values("MSCI_RM_INDEX_ID")

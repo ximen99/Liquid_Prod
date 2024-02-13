@@ -75,11 +75,11 @@ def update_extMan_PV_report(path: Path, file_name: str, to_date: date) -> None:
 
 def get_gpf_pv_report_path(dt:date) -> str:
     folder_path = create_folder_path(PROD_PATH, dt, False) / "Scale Calculation"
-    return folder_path / "PV Report GPF Ext Man " + ut.date_to_str(dt) + ".xlsx"
+    return folder_path / ("PV Report GPF Ext Man " + ut.date_to_str(dt) + ".xlsx")
 
 def get_mtg_pv_report_path(dt: date) -> str:
     folder_path = create_folder_path(PROD_PATH, dt, False) / "Scale Calculation"
-    return folder_path / "PV Report E0043 Ext Man " + ut.date_to_str(dt) + ".xlsx"
+    return folder_path / ("PV Report E0043 Ext Man " + ut.date_to_str(dt) + ".xlsx")
 
 def create_extMan_PV_reports(to_date: date) -> None:
     path = create_folder_path(BASE_PATH, to_date, False) / "Scale Calculation"
