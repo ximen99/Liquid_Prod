@@ -4,6 +4,7 @@ SELECT
 	securityName,
 	CounterParty,
 	PositionId,
+	ParentPortfolioCode,
 	ExchangeId_Best,
 	ExchangeId_BestType,
 	MaturityDate,
@@ -34,5 +35,6 @@ GROUP BY RiskDate,
 	PriceCcyCode,
 	EntryPrice,
 	LocalFuturePrice,
-	PricedSecurityName
+	PricedSecurityName,
+	ParentPortfolioCode
 ORDER BY securityName, InstrumentTypeDesc, PositionId
