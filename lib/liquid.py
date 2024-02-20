@@ -184,6 +184,45 @@ def update_load_excel_template(dt: date, type: str, df: pd.DataFrame) -> None:
     ut.rename_file_with_regex(
         folder_path, excel_file_regex, f"Positions_{ut.date_to_str(dt)}_{type}.xlsx")
 
+def override_reporting_tags(name:str, df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    if name == "Main":        
+        financing_leg_filter = "InstrumentType.isin(['Equity Index Swap','Equity Single Name Swap','Equity Basket Swap']) & SwapLegTypeCode == 'FLOAT_LEG'"
+        ut.update_col_values_based_on_condition(df, financing_leg_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Swap Financing")
+        
+        cdor_unitized_filter = "InstrumentType == 'Bond Pool Fund' & ParentPortfolioCode != 'RISKNEUFR'"
+        ut.update_col_values_based_on_condition(df, cdor_unitized_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Swap Financing")
+        
+        st_unitized_fund_filter = "InstrumentType == 'Money Market Pool Fund'"
+        ut.update_col_values_based_on_condition(df, st_unitized_fund_filter, ['RiskCountryCode','BCIGicsSector'], "ST Funds")
+        df.loc[df.eval(st_unitized_fund_filter),"BCIUltimateParentIssuerName"] = df.loc[df.eval(st_unitized_fund_filter),"securityName"].str.replace(r" - Asset|\.|\(|\)",'',regex=True)
+
+        cash_filter = "ModelRuleEffective == 'CASH' & ISR_streamName != 'Bayview'"
+        ut.update_col_values_based_on_condition(df, cash_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Cash")
+
+        fx_forward_filter = "InstrumentType.isin(['FX Forward','FX Spot','FX Option'])"
+        ut.update_col_values_based_on_condition(df, fx_forward_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Derivatives")
+
+        interest_rate_swap_filter = "ISR_streamName == 'SCD_IRS'"
+        ut.update_col_values_based_on_condition(df, interest_rate_swap_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Derivatives")
+        return df
+    elif name == "IFT":
+        ift_filter = "ModelRuleEffective == 'IFT Loans'"
+        ut.update_col_values_based_on_condition(df, ift_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "IFT")
+        return df
+    elif name == "FixTwo":
+        ift_filter = "ModelRuleEffective == 'IFT Loans'"
+        ut.update_col_values_based_on_condition(df, ift_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "IFT")
+        
+        cash_filter = "ModelRuleEffective == 'CASH' & ISR_streamName != 'Bayview'"
+        ut.update_col_values_based_on_condition(df, cash_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Cash")
+        
+        st_unitized_fund_filter = "InstrumentType == 'Money Market Pool Fund'"
+        ut.update_col_values_based_on_condition(df, st_unitized_fund_filter, ['RiskCountryCode','BCIGicsSector'], "ST Funds")
+        df.loc[df.eval(st_unitized_fund_filter),"BCIUltimateParentIssuerName"] = df.loc[df.eval(st_unitized_fund_filter),"securityName"].str.replace(r" - Asset|\.|\(|\)",'',regex=True)
+        return df
+    else:
+        return df
 
 def save_weekly_liquid_data(date) -> None:
     path = create_folder_path(BASE_PATH, date, True)
@@ -199,6 +238,7 @@ def save_weekly_liquid_data(date) -> None:
     to_download["FixTwo"] = pd.concat([get_re_ift(), get_pcf_cash()])
 
     for name, df in to_download.items():
+        df = override_reporting_tags(name, df)
         df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
         print(f"Saved {name} at "+str(path / "Files" / name))
         update_load_excel_template(date, name, df.set_index("ExcludeOverride"))

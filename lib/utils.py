@@ -213,3 +213,12 @@ def read_multi_statement_sql_file(path: Path) -> str:
     multi_statment_sql = read_sql_file(path)
     multi_statment_sql = multi_statment_sql.replace("'", "''")
     return replace_mark_with_text(template, {"?": multi_statment_sql})
+
+def update_col_values_based_on_condition(df: pd.DataFrame, condition: str, col, new_value: str) -> None:
+    if isinstance(col, list):
+        for c in col:
+            df.loc[df.eval(condition), c] = new_value
+            print(f"Updated {c} to {new_value} based on condition {condition}")
+    else:
+        df.loc[df.eval(condition), col] = new_value
+        print(f"Updated {col} to {new_value} based on condition {condition}")
