@@ -46,7 +46,7 @@ def update_msci_data(old_df: pd.DataFrame, new_dt:date) -> pd.DataFrame:
                     [old_df.columns]
     ) 
     print(f'added new future data {new_df["BCI_Id"].to_list()} in MSCI')
-    return pd.concat([keep_df, new_df], ignore_index=True)
+    return pd.concat([keep_df, new_df], ignore_index=True).sort_values(by='portfolioCode')
 
 
 def create_look_through_tag_file(from_date: date, to_date: date) -> None:
@@ -54,7 +54,7 @@ def create_look_through_tag_file(from_date: date, to_date: date) -> None:
     liquid_df = old_df[~old_df["portfolioCode"].isin(cl.PORT_LS)]
     liquid_df = update_liquid_future(liquid_df)
     msci_df = old_df[old_df["portfolioCode"].isin(cl.PORT_LS)]
-    msci_df = update_msci_data(msci_df,from_date)
+    msci_df = update_msci_data(msci_df,to_date)
     pd.concat([liquid_df, msci_df], ignore_index=True).to_excel(BASE_PATH / str(to_date.year) /(FILE_PREFIX + ut.date_to_str(to_date) + ".xlsx"), index=False, sheet_name= "Main")
     
     

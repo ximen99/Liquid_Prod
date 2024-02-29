@@ -190,8 +190,11 @@ def override_reporting_tags(name:str, df: pd.DataFrame) -> pd.DataFrame:
         financing_leg_filter = "InstrumentType.isin(['Equity Index Swap','Equity Single Name Swap','Equity Basket Swap']) & SwapLegTypeCode == 'FLOAT_LEG'"
         ut.update_col_values_based_on_condition(df, financing_leg_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Swap Financing")
         
-        cdor_unitized_filter = "InstrumentType == 'Bond Pool Fund' & ParentPortfolioCode != 'RISKNEUFR'"
+        cdor_unitized_filter = "InstrumentType == 'Bond Pool Fund' &  securityName != 'CDOR 2 Floating Rate Fund - Asset'"
         ut.update_col_values_based_on_condition(df, cdor_unitized_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Swap Financing")
+        
+        cdor2_unitized_filter = "InstrumentType == 'Bond Pool Fund' &  securityName == 'CDOR 2 Floating Rate Fund - Asset'"
+        ut.update_col_values_based_on_condition(df, cdor2_unitized_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "CDOR Floating Rate Fund 2 - Unit")
         
         st_unitized_fund_filter = "InstrumentType == 'Money Market Pool Fund'"
         ut.update_col_values_based_on_condition(df, st_unitized_fund_filter, ['RiskCountryCode','BCIGicsSector'], "ST Funds")
