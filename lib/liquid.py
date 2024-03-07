@@ -209,6 +209,10 @@ def override_reporting_tags(name:str, df: pd.DataFrame) -> pd.DataFrame:
         interest_rate_swap_filter = "ISR_streamName == 'SCD_IRS'"
         ut.update_col_values_based_on_condition(df, interest_rate_swap_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Derivatives")
         return df
+    elif name == "Illiquids":
+        cash_filter = "ModelRuleEffective == 'CASH' & ISR_streamName != 'Bayview'"
+        ut.update_col_values_based_on_condition(df, cash_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "Cash")
+        return df
     elif name == "IFT":
         ift_filter = "ModelRuleEffective == 'IFT Loans'"
         ut.update_col_values_based_on_condition(df, ift_filter, ['RiskCountryCode','BCIGicsSector','BCIUltimateParentIssuerName'], "IFT")
