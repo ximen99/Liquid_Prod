@@ -438,6 +438,7 @@ def get_superD_BTRSEQ(dt: date) -> pd.DataFrame:
         )
         .query("`Instrument Type` == 'Total Return Swap'")
         .pivot_table(index="External ID", values=['External Trade ID', 'Volume'], aggfunc={'External Trade ID': 'count', 'Volume': 'sum'})
+        .pipe(lambda df: df.append(df.sum().rename('Total')))
     )
 
 
