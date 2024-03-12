@@ -245,7 +245,6 @@ def save_weekly_liquid_data(date) -> None:
     to_download["FixTwo"] = pd.concat([get_re_ift(), get_pcf_cash()])
 
     for name, df in to_download.items():
-        df = override_reporting_tags(name, df)
         df.to_csv(path / "Files" / f"{prefix}_{name}.csv", index=False)
         print(f"Saved {name} at "+str(path / "Files" / name))
         update_load_excel_template(date, name, df.set_index("ExcludeOverride"))

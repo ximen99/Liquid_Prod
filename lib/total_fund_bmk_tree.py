@@ -52,24 +52,14 @@ def update_single_bmk_tree(folder_path: Path, file_name: str, scale_df: pd.DataF
         wb = app.books.open(folder_path / file_name)
         sheet = wb.sheets[0]
         last_row = sheet.range("A1").end("down").row
-        # get only positive market values of duplicated portfolios which should be the neutralization portfolios
-        neut_port = pv_df[pv_df.duplicated('Name',keep=False) & (pv_df['PV']>0)] 
         for r in range(2, last_row + 1):
             port_code = sheet.range(f"G{r}").value
-            pool_code = sheet.range(f"F{r}").value
             # check portfolio code exists in PV report
             if port_code not in pv_df.index:
                 raise Exception(
                     f"Port code {port_code} not found in PV report")
-            # update market value from PV report
-            if port_code in neut_port["Name"].values:
-                neut_value = neut_port.loc[neut_port["Name"] == port_code, "PV"].values[0]
-                if pool_code.startswith("RISKNEU"):
-                    sheet.range(f"M{r}").value = neut_value * -1
-                else:
-                    sheet.range(f"M{r}").value = neut_value
-            else:
-                sheet.range(f"M{r}").value = pv_df.loc[pv_df["Name"] == port_code, "PV"].values[0]
+            # update PV
+            sheet.range("M" + str(r)).value = pv_df.loc[port_code, "PV"]
             # update scale
             if port_code in scale_df.index:
                 sheet.range(f"L{r}").value = scale_df.loc[port_code, "scale"]
@@ -92,6 +82,7 @@ def update_total_fund_bmk_tree(to_date: date) -> None:
                       f"Total Fund PV Report {ut.date_to_str(to_date)}.xlsx", skiprows=19, usecols="B:D")
         .query("Level == 3")
         .filter(["Name", "PV"])
+        .set_index("Name")
     )
     ut.loop_through_files_contains(
         path, f"Total_Fund_BMK_Tree_{ut.date_to_str(to_date)}", update_single_bmk_tree, scale_df, pv_df)
