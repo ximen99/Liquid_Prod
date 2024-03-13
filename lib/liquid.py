@@ -410,15 +410,14 @@ def create_pv_validation(dt: date) -> None:
         path, r"^LiquidsDerivatives PV Validation .*\.xlsx", f"LiquidsDerivatives PV Validation {ut.date_to_str(dt)}.xlsx")
 
 
-def counter_party_check(dt: date) -> None:
+def counter_party_check() -> None:
     instruments = ["Interest Rate Vanilla Swap", "Interest Rate Cross Currency Basis Swap", "Interest Rate Overnight Index Swap",
                    "Equity Index Swap", "FX Forward", "Equity Single Name Swap", "Fully Funded Swap", "FX Spot", "Repurchase Agreement", "Reverse Repo"]
     df = (
         get_filter_group_data()
         .query("InstrumentType in @instruments")
     )
-    counter_party = mds.get_counter_party_map(
-        dt)['COUNTERPARTY_OUTPUT'].tolist()
+    counter_party = mds.get_counter_party_map()['COUNTERPARTY_OUTPUT'].tolist()
     unmapped_counter_party = set(
         df['CounterParty'].unique().tolist()) - set(counter_party)
     if len(unmapped_counter_party) > 0:
@@ -441,10 +440,10 @@ def get_superD_BTRSEQ(dt: date) -> pd.DataFrame:
     )
 
 
-def get_index_map(index: List[str], dt: date):
+def get_index_map(index: List[str]):
     df_data = get_all_liquid_except_CIBC()
     df_final = pd.DataFrame()
-    df_map = mds.get_benchmark_security_map(dt)
+    df_map = mds.get_benchmark_security_map()
     sec_id_ls = []
 
     for i in index:

@@ -59,8 +59,8 @@ def get_sql_data(dt: date) -> pd.DataFrame:
     return df
 
 
-def clean_data(df: pd.DataFrame, dt: date) -> pd.DataFrame:
-    countrypartyMap = (mds.get_counter_party_map(dt)
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    countrypartyMap = (mds.get_counter_party_map()
                        .set_index('COUNTERPARTY_INPUT')
                        .to_dict()
                        ['COUNTERPARTY_OUTPUT'])
