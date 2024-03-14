@@ -46,7 +46,7 @@ IN (
 	'UNITIZED_FUND'
 	)
 AND ParentPortfolioCode NOT LIKE '%HG_%'
-AND ParentPortfolioCode NOT IN ('EBRONCO','E0071N','ME0017','ME0044','ME0358','E0074','ME0025','ME173B','ME170D','ME170UIN','E0355','E0041','E0042','E0044', 'ECOWEN')
+AND ParentPortfolioCode NOT IN ('EBRONCO','E0071N','ME0017','ME0044','ME0358','E0074','ME0025','ME173B','ME170D','ME170UIN','E0355','E0041','E0042','E0044', 'ECOWEN', 'EDPL0125', 'EDPLSKAN','EDPTHETI')
 AND PositionId <> 'E0D0125_EDPT0125_70669603_1'
 ----------------remove after prod implementation----------------
 and PositionId not in (
