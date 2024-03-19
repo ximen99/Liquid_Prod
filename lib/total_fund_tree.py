@@ -140,7 +140,27 @@ def get_gpf_mv(dt: date):
         sql, {"@valuationDate": f"''{ut.date_to_str_with_dash(dt)}''"})
     return ut.read_data_from_preston_with_string_single_statement(sql)
 
-
+def get_ecp_scd_percentage():
+    df = ut.read_data_from_preston_with_sql_file(SQL_PATH/"ECP_riskraw.sql")
+    port_code_map = {
+        "ECP Credit Strategies Class A & A1": "ECPCSAA",
+        "ECP Credit Strategies Class B":"ECPCSAB",
+        "ECP Credit Strategies Class C":"ECPCSAC",
+    }
+    df.replace({"FundName": port_code_map}, inplace=True)
+    df["percentage"] = df["MV"]/df["MV"].sum()
+    if abs(1 - df["percentage"].sum()) > 0.01:
+        raise ValueError("Sum of percentage is not 1")
+    return df.set_index("FundName")["percentage"]
+# TODO: need to test if works
+def break_down_ECPSCA(df:pd.DataFrame):
+    ecpsca_mv =  df.loc["ECPCSA", "MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV"]
+    ecp_scd_percentage = get_ecp_scd_percentage()
+    ecp_mv = ecpsca_mv * ecp_scd_percentage
+    df = df.drop("ECPCSA")
+    df = df.append(pd.DataFrame({"MARKET_VALUE_ACCRUED_INTEREST_BASE_NAV":ecp_mv['percentage']}, index=ecp_mv.index))
+    return df
+    
 def update_GPF_scale_calc(from_date: date, to_date: date) -> None:
     file_prefix = "Scale calculation GPF "
     folder_path = create_folder_path(
